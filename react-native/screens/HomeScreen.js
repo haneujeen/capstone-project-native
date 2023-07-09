@@ -12,17 +12,36 @@ export default function HomeScreen() {
         setCarType(type);
     };
 
+    const onSubmit = async (carType, query) => {
+    }
+
     return (
         <View style={styles.container}>
             <View style={styles.innerContainer}>
-                <TouchableOpacity style={styles.iconContainer} onPress={() => handleIconPress('bus')} activeOpacity={0.6}>
-                    <FontAwesomeIcon icon={faShuttleVan} size={30} style={{ color: carType === 'bus' ? 'hsla(0, 0%, 20%, 1)' : 'hsla(0, 0%, 50%, 1)' }} />
+                <TouchableOpacity
+                    style={styles.iconContainer}
+                    onPress={() => handleIconPress('bus')}
+                    activeOpacity={0.6}
+                >
+                    <FontAwesomeIcon
+                        icon={faShuttleVan}
+                        size={30}
+                        style={{ color: carType === 'bus' ? 'hsla(0, 0%, 20%, 1)' : 'hsla(0, 0%, 80%, 1)' }}
+                    />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.iconContainer} onPress={() => handleIconPress('subway')} activeOpacity={0.6}>
-                    <FontAwesomeIcon icon={faSubway} size={30} style={{ color: carType === 'subway' ? 'hsla(0, 0%, 20%, 1)' : 'hsla(0, 0%, 50%, 1)' }} />
+                <TouchableOpacity
+                    style={styles.iconContainer}
+                    onPress={() => handleIconPress('subway')}
+                    activeOpacity={0.6}
+                >
+                    <FontAwesomeIcon
+                        icon={faSubway}
+                        size={30}
+                        style={{ color: carType === 'subway' ? 'hsla(0, 0%, 20%, 1)' : 'hsla(0, 0%, 80%, 1)' }}
+                    />
                 </TouchableOpacity>
             </View>
-            <SearchBar value={searchText} onChangeText={setSearchText} />
+            <SearchBar value={searchText} onChangeText={setSearchText} carType={carType} />
         </View>
     );
 }
