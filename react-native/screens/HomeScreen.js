@@ -25,7 +25,7 @@ export default function HomeScreen() {
             result = await fetchAllStations(searchText);
         }
 
-        navigation.navigate('Details', { stations: result });
+        navigation.navigate('MapLike', { stations: result });
     }
 
     return (

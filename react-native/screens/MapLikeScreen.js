@@ -6,31 +6,30 @@ import { fetchStationsOnRoute } from '../api/api_service';
 export default function MapLikeScreen({ route, navigation }) {
     const { stations } = route.params;
     const [departure, setDeparture] = useState(null);
-    const [stationsOnRoute, setStationsOnRoute] = useState(null);
-    const [destination, setDestination] = useState(null);
     const [stationType, setStationType] = useState(null);
-
+    const [arrivals, setArrivals] = useState(null);
+    
     useEffect(() => {
-        if (departureStation) {
-            // Fetch stations user can go from selected departure station
-            const fetchedStations = fetchStationsOnRoute(departureStation, stationType);
-            setStationsOnRoute(fetchedStations);
+        if (arrivals) {
+            if (stationType === 'bus') {
+                navigation.navigate("BusStation", { busArrivals: arrivals, departure: departure });
+            } else {
+                navigation.navigate("SubwayStation", { trainArrivals: arrivals, departure: departure })
+            }
         }
-    }, [departureStation]);
+    }, [arrivals]);
 
     const selectDeparture = (station) => {
         setDeparture(station);
         setStationType(station.type);
-    };
-
-    const selectDestination = (station) => {
-        setDestination(station);
-        if (station.type === 'bus') {
-            navigation.navigate('BusStationScreen', { departure: departure, destination: station });
-        } else {
-            navigation.navigate('SubwayStationScreen', { departure: departure, destination: station });
-        }
         
+        if (stationType === 'bus') {
+            const busArrivals = fetchBusArrivals(stationName); 
+            setArrivals(busArrivals);
+        } else {
+            const trainArrivals = fetchTrainArrivals(stationName);
+            setArrivals(trainArrivals);
+        }
     };
 
     return (
@@ -43,17 +42,6 @@ export default function MapLikeScreen({ route, navigation }) {
                     keyExtractor={(item) => item.id.toString()}
                     renderItem={({ item }) => (
                         <TouchableOpacity onPress={() => selectDeparture(item)}>
-                            <Text>{item.name}</Text>
-                        </TouchableOpacity>
-                    )}
-                />
-            )}
-            {departure && stationsOnRoute && (
-                <FlatList
-                    data={stationsOnRoute}
-                    keyExtractor={(item) => item.id.toString()}
-                    renderItem={({ item }) => (
-                        <TouchableOpacity onPress={() => selectDestination(item)}>
                             <Text>{item.name}</Text>
                         </TouchableOpacity>
                     )}
