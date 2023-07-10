@@ -3,16 +3,29 @@ import { StyleSheet, View, TouchableOpacity, Text } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faShuttleVan, faSubway } from '@fortawesome/free-solid-svg-icons';
 import SearchBar from './components/SearchBar';
+import { useNavigation } from '@react-navigation/native';
+import { fetchBusStations, fetchSubwayStations, fetchAllStations } from '../api/api_service';
 
 export default function HomeScreen() {
     const [carType, setCarType] = useState(null);
     const [searchText, setSearchText] = useState('');
+    const navigation = useNavigation();
 
     const handleIconPress = (type) => {
         setCarType(type);
     };
 
-    const onSubmit = async (carType, query) => {
+    const onSubmit = async () => {
+        let result;
+        if (carType === 'bus') {
+            result = await fetchBusStations(searchText);
+        } else if (carType === 'subway') {
+            result = await fetchSubwayStations(searchText);
+        } else {
+            result = await fetchAllStations(searchText);
+        }
+
+        navigation.navigate('Details', { stations: result });
     }
 
     return (
@@ -41,7 +54,7 @@ export default function HomeScreen() {
                     />
                 </TouchableOpacity>
             </View>
-            <SearchBar value={searchText} onChangeText={setSearchText} carType={carType} />
+            <SearchBar value={searchText} onChangeText={setSearchText} carType={carType} onSubmit={onSubmit} />
         </View>
     );
 }

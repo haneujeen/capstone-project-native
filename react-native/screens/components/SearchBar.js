@@ -1,15 +1,20 @@
-// screens/components/SearchBar.js
-
 import React from 'react';
 import { TextInput, StyleSheet, View } from 'react-native';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
 
-export default function SearchBar({ value, onChangeText, carType }) {
-    const placeholder = `Search ${carType === 'bus' ? 'a bus stop' : 'a subway station'}`;
+export default function SearchBar({ value, onChangeText, carType, onSubmit }) {
+    const placeholder = `Search only ${carType === 'bus' ? 'bus stops' : 'subway stations'}`;
     const iconStyle = {
         color: value ? 'hsla(0, 0%, 30%, 1)' : 'hsla(0, 0%, 70%, 1)', 
         marginRight: 10
+    };
+
+    const handlePress = (event) => {
+        if (event.nativeEvent.key === "Enter") {
+            Keyboard.dismiss();
+            onSubmit();
+        }
     };
 
     return (
@@ -19,12 +24,15 @@ export default function SearchBar({ value, onChangeText, carType }) {
                     style={styles.textInput}
                     onChangeText={onChangeText}
                     value={value}
-                    placeholder={carType ? placeholder : "Select vehicle type"}
-                    editable={!!carType}
+                    placeholder={carType ? placeholder : "Search all stations"}
+                    onKeyPress={value ? handlePress : undefined}
                 />
                 <FontAwesomeIcon
                     icon={faMagnifyingGlass}
-                    style={iconStyle} />
+                    style={iconStyle}
+                    onPress={handlePress}
+                    disabled={!value}
+                />
             </View>
         </View>
     );
