@@ -25,7 +25,12 @@ export default function MapLikeScreen({ route, navigation }) {
 
     const selectDestination = (station) => {
         setDestination(station);
-        navigation.navigate('StationScreen', { type: stationType, departure: departure, destination: station });
+        if (station.type === 'bus') {
+            navigation.navigate('BusStationScreen', { departure: departure, destination: station });
+        } else {
+            navigation.navigate('SubwayStationScreen', { departure: departure, destination: station });
+        }
+        
     };
 
     return (
