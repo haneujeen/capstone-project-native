@@ -44,8 +44,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'openapi_seoul_service',
     'openai_api_service',
+    'openapi_seoul_service',
     'app_service',
 ]
 
