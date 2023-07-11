@@ -29,9 +29,8 @@ SECRET_KEY = os.getenv('secret_key')
 OGD_API_KEY = os.getenv('OGD_API_KEY')
 
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-print("SECRET_KEY:", SECRET_KEY)
-print("OGD_API_KEY:", OGD_API_KEY)
-print("OPENAI_API_KEY:", OPENAI_API_KEY)
+
+SEOUL_API_KEY = os.getenv('SEOUL_API_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
