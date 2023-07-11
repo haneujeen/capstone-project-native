@@ -1,26 +1,31 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { StyleSheet, Text, View, FlatList, TouchableOpacity, Button } from 'react-native';
 import { fetchStationsOnRoute } from '../api/api_service';
 
 export default function BusStationScreen({ route, navigation }) {
-    const { busArrivals, departure } = route.params;
+    const { busArrivals, departure, message } = route.params;
     const [stationsOnRoute, setStationsOnRoute] = useState(null);
     const [bus, setBus] = useState(null);
     const [destination, setDestination] = useState(null);
 
     useEffect(() => {
         if (destination) {
-            navigation.navigate("BusScreen", { bus: bus, departure: departure, destination: destination });
+            navigation.navigate("Bus", { bus: bus, departure: departure, destination: destination });
         }
     }, [destination]);
 
     // Detailed information about arriving buses to this bus station.
-    const selectBus = (bus) => {
+    const selectBus = async (bus) => {
         setBus(bus);
 
-        // Fetch all stations on the route of the selected bus
-        let fetchedStations = fetchStationsOnRoute("bus", bus);
-        setStationsOnRoute(fetchedStations);
+        let result = await fetchStationsOnRoute("bus", bus.route_id);
+
+        let message;
+        if (result.response_code === '0') {
+            setStationsOnRoute(result.list);
+        } else {
+            // message = result.message;
+        }
     }
 
     const selectDestination = (station) => {
@@ -32,16 +37,22 @@ export default function BusStationScreen({ route, navigation }) {
             <Text>Bus Station Screen</Text>
             <Text>From: {departure.name}</Text>
             <Text>To: {destination?.name}</Text>
+            <Text>{busArrivals[0].id}</Text>
             {/* Information here */}
-            <FlatList
-                data={busArrivals}
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={({ item }) => (
-                    <TouchableOpacity onPress={() => selectBus(item)}>
-                        <Text>{item.name}</Text>
-                    </TouchableOpacity>
-                )}
-            />
+            {busArrivals && (
+                <FlatList
+                    data={busArrivals}
+                    keyExtractor={(item) => item.route_id.toString()}
+                    renderItem={({ item }) => (
+                        <TouchableOpacity onPress={() => selectBus(item)}>
+                            <Text>{item.name} {item.route_id}</Text>
+                        </TouchableOpacity>
+                    )}
+                />
+            )}
+            {message && (
+                <Text>{message}</Text>
+            )}
             {stationsOnRoute && (
                 <>
                     <Text>Wanna set up destination and get alert?</Text>

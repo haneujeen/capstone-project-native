@@ -15,17 +15,24 @@ export default function HomeScreen() {
         setCarType(type);
     };
 
-    const onSubmit = async () => {
+    const onSubmit = async (value) => {
         let result;
+        let stations;
+        let message;
         if (carType === 'bus') {
-            result = await fetchBusStations(searchText);
+            result = await fetchBusStations(value);
+            if (result.response_code == '0') { // data.list[0].id
+                stations = result.list;
+            } else {
+                message = result.message;
+            }
         } else if (carType === 'subway') {
             result = await fetchSubwayStations(searchText);
         } else {
             result = await fetchAllStations(searchText);
         }
 
-        navigation.navigate('MapLike', { stations: result });
+        navigation.navigate('StationList', { stations: stations, message: message });
     }
 
     return (

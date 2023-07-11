@@ -6,7 +6,7 @@ export async function fetchBusStations(query) {
     let data;
     try {
         // Fetch bus stations from OGD
-        let response = await axios.get(`${BASE_URL}/bus/get_bus_stations`);
+        let response = await axios.get(`${BASE_URL}/bus/get_bus_stations/${query}`);
         data = await response.data;
         console.log(data);
     } catch (error) {
@@ -21,7 +21,7 @@ export async function fetchSubwayStations(query) {
     let data;
     try {
         // Fetch subway stations from OGD
-        let response = await axios.get(`${BASE_URL}/subway/get_subway_stations`);
+        let response = await axios.get(`${BASE_URL}/subway/get_subway_stations/${query}`);
         data = await response.data;
         console.log(data);
     } catch (error) {
@@ -32,11 +32,12 @@ export async function fetchSubwayStations(query) {
     return data;
 }
 
-export async function fetchAllStations(query) {
+// Fetch the arrivals of bus/trains with station id
+export async function fetchBusArrivals(station_id) {
     let data;
     try {
         // Fetch all stations from OGD
-        let response = await axios.get(`${BASE_URL}/get_all_stations`);
+        let response = await axios.get(`${BASE_URL}/bus/get_arrivals/${station_id}`);
         data = await response.data;
         console.log(data);
     } catch (error) {
@@ -47,25 +48,19 @@ export async function fetchAllStations(query) {
     return data;
 }
 
-export async function fetchStationsOnRoute(station, type) {
+// Fetch all stations a bus or a train stops at
+export async function fetchStationsOnRoute(carType, route_id) {
     let data;
-    if (type == 'bus_station') {
+    if (carType === 'bus') {
         try {
-            let response = await axios.get(`${BASE_URL}/bus/get_stations_on_route/${station.id}`);
+            // Fetch all stations from OGD
+            let response = await axios.get(`${BASE_URL}/bus/get_stations_on_route/${route_id}`);
             data = await response.data;
-        } catch (error) {
-            console.error(error);
-            data = `:( ${error})`
-        }
-    } else {
-        try {
-            let response = await axios.get(`${BASE_URL}/subway/get_stations_on_route/${station.id}`);
-            data = await response.data;
+            console.log(data);
         } catch (error) {
             console.error(error);
             data = `:( ${error})`
         }
     }
-
     return data;
 }
