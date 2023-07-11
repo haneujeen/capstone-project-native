@@ -9,7 +9,7 @@ OGD_API_KEY = unquote(settings.OGD_API_KEY)
 
 
 @api_view(['GET'])
-def get_bus_stations(request, query):
+def get_stations(request, query):
     url = 'http://ws.bus.go.kr/api/rest/stationinfo/getStationByName'
 
     params = {
@@ -48,7 +48,7 @@ def get_bus_stations(request, query):
     else:
         station_response = {
             'is_valid': False,
-            'response_code': response.json()['msgHeader']['headerCd'],
+            'response_code': '202',
             'message': response.json()['msgHeader']['headerMsg'],
         }
 
