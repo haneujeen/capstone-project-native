@@ -7,60 +7,37 @@ import { useNavigation } from '@react-navigation/native';
 import { fetchBusStations, fetchSubwayStations, fetchAllStations } from '../api/api_service';
 
 export default function HomeScreen() {
-    const [carType, setCarType] = useState(null);
     const [searchText, setSearchText] = useState('');
     const navigation = useNavigation();
 
-    const handleIconPress = (type) => {
-        setCarType(type);
-    };
-
     const onSubmit = async (value) => {
         let result;
-        let stations;
-        let message;
-        if (carType === 'bus') {
-            result = await fetchBusStations(value);
-            if (result.response_code == '0') { // data.list[0].id
-                stations = result.list;
-            } else {
-                message = result.message;
-            }
-        } else if (carType === 'subway') {
-            result = await fetchSubwayStations(searchText);
+        let busStationsResults, subwayStationsResults;
+        let busStationsMessage, subwayStationsMessage;
+        
+        busStationsResults = await fetchBusStations(value);
+        if (busStationsResults.response_code == '0') {
+            busStationsResults = result.list;
         } else {
-            result = await fetchAllStations(searchText);
+            busStationsMessage = result.message;
+        }
+        
+        subwayStationsResults = await fetchSubwayStations(value);
+        if (subwayStationsResults.response_code == '0') {
+            subwayStationsResults = result.list;
+        } else {
+            subwayStationsMessage = result.message;
         }
 
-        navigation.navigate('StationList', { stations: stations, message: message });
+        navigation.navigate('StationList', { busStations: busStationsResults, 
+                                                busMessage: busStationsMessage,
+                                                subwayStations: subwayStationsResults,
+                                                subwayMessage: subwayStationsMessage
+                                            });
     }
 
     return (
         <View style={styles.container}>
-            <View style={styles.innerContainer}>
-                <TouchableOpacity
-                    style={styles.iconContainer}
-                    onPress={() => handleIconPress('bus')}
-                    activeOpacity={0.6}
-                >
-                    <FontAwesomeIcon
-                        icon={faShuttleVan}
-                        size={30}
-                        style={{ color: carType === 'bus' ? 'hsla(0, 0%, 20%, 1)' : 'hsla(0, 0%, 80%, 1)' }}
-                    />
-                </TouchableOpacity>
-                <TouchableOpacity
-                    style={styles.iconContainer}
-                    onPress={() => handleIconPress('subway')}
-                    activeOpacity={0.6}
-                >
-                    <FontAwesomeIcon
-                        icon={faSubway}
-                        size={30}
-                        style={{ color: carType === 'subway' ? 'hsla(0, 0%, 20%, 1)' : 'hsla(0, 0%, 80%, 1)' }}
-                    />
-                </TouchableOpacity>
-            </View>
             <SearchBar value={searchText} onChangeText={setSearchText} carType={carType} onSubmit={onSubmit} />
         </View>
     );
