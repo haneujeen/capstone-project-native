@@ -12,19 +12,23 @@ class BusConsumer(AsyncWebsocketConsumer):
 """
 
 async def get_bus(id, route_id):
+    try:
 
-    bus = {
-        'id' ,
-        'name' ,
-        'previous_station': ,
-        'station': ,
-        'next_station': ,
-        'desc': {
-            'travel_time': ,
-            'speed': ,
-            'is_las': ,
-            'plate_number': ,
-        },
-    }
+        bus = {
+            'id': id,
+            'name': ,
+            'previous_station':,
+            'station':,
+            'next_station':,
+            'desc': {
+                'travel_time':,
+                'speed':,
+                'is_las':,
+                'plate_number':,
+            },
+        }
 
-    return bus
+        return bus
+
+    except Exception as e:
+        return {'error': str(e)}
