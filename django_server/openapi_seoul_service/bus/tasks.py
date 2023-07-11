@@ -10,32 +10,39 @@ class BusConsumer(AsyncWebsocketConsumer):
             await self.send(text_data=json.dumps(bus))
             await asyncio.sleep(10)
 """
+from urllib.parse import unquote
+import httpx
+from django.conf import settings
 
-async def update_bus(id, route_id):
+
+OGD_API_KEY = unquote(settings.OGD_API_KEY)
+async def get_bus(id, route_id):
     try:
+        index_station_id = await get_index_station_id(id)
+        previous_station, this_station, next_station = await get_stations(index_station_id, route_id)
 
         bus = {
             'id': id,
-            'name': this_station['rtNm'],
+            'name': this_station.get('rtNm'),
             'previous_station': {
-                'id': previous_station['stId'],
-                'name': previous_station['stNm'],
+                'id': previous_station.get('stId'),
+                'name': previous_station.get('stNm'),
             },
             'station': {
-                'id': this_station['stId'],
-                'name': this_station['stNm'],
+                'id': this_station.get('stId'),
+                'name': this_station.get('stNm'),
             },
             'next_station': {
-                'id': next_station['stId'],
-                'name': next_station['stNm'],
+                'id': next_station.get('stId'),
+                'name': next_station.get('stNm'),
             },
             'desc': {
-                'bus_type': this_station['busType1'],
-                'travel_time': this_station['traTime1'],
-                'speed': this_station['traSpd1'],
-                'is_last': this_station['isLast1'],
-                'is_full': this_station['isFull1Flag'],
-                'plate_number': ,
+                'bus_type': this_station.get('busType1'),
+                'travel_time': this_station.get('traTime1'),
+                'speed': this_station.get('traSpd1'),
+                'is_last': this_station.get('isLast1'),
+                'is_full': this_station.get('isFullFlag1'),
+                'plate_number': this_station.get('plainNo1'),
             },
         }
 
@@ -44,13 +51,8 @@ async def update_bus(id, route_id):
     except Exception as e:
         return {'error': str(e)}
 
-from django.conf import settings
-from urllib.parse import unquote
-import requests
 
-OGD_API_KEY = unquote(settings.OGD_API_KEY)
-
-async def get_description(id):
+async def get_index_station_id(id):
     url = 'http://ws.bus.go.kr/api/rest/buspos/getBusPosByVehId'
 
     params = {
@@ -59,15 +61,16 @@ async def get_description(id):
         'resultType': 'json'
     }
 
-    response = requests.get(url, params=params)
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url, params=params)
+        data = response.json()
 
-    index_station_id = response['msgBody']['itemList'][0]['lastStnId']
-    plate_number = response['msgBody']['itemList'][0]['plainNo']
+    index_station_id = data['msgBody']['itemList'][0]['lastStnId']
 
-    return index_station_id, plate_number
+    return index_station_id
 
 
-async def get_information(index_station_id, route_id):
+async def get_stations(index_station_id, route_id):
     url = 'http://ws.bus.go.kr/api/rest/arrive/getArrInfoByRouteAll'
 
     params = {
@@ -75,23 +78,27 @@ async def get_information(index_station_id, route_id):
         'busRouteId': route_id,
         'resultType': 'json'
     }
-    response = requests.get(url, params=params)
 
-    data = response['msgBody']['itemList']
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url, params=params)
+        data = response.json()
 
-    previous_station_index = 0
-    this_station_index = 0
-    next_station_index = 0
-    for i, item in data:
+    data = data['msgBody']['itemList']
+
+    index = -1
+    previous_station, this_station, next_station = None, None, None
+    for i, item in enumerate(data):
         if item['stId'] == index_station_id:
-            previous_station_index = i
-            this_station_index = i + 1
-            next_station_index = i + 2
+            index = i
+            previous_station = data[index]
 
-    previous_station = data[previous_station_index]
-    this_station = data[this_station_index]
-    next_station = data[next_station_index]
+    if previous_station is None:
+        raise Exception('No matching station found')
+
+    if index + 2 < len(data):
+        this_station = data[index + 1]
+        next_station = data[index + 2]
+    else:
+        raise Exception('No matching next station found')
 
     return previous_station, this_station, next_station
-
-

@@ -9,9 +9,10 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
-from dotenv import load_dotenv
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+print("Loading settings module")
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -28,6 +29,9 @@ SECRET_KEY = os.getenv('secret_key')
 OGD_API_KEY = os.getenv('OGD_API_KEY')
 
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+print("SECRET_KEY:", SECRET_KEY)
+print("OGD_API_KEY:", OGD_API_KEY)
+print("OPENAI_API_KEY:", OPENAI_API_KEY)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True

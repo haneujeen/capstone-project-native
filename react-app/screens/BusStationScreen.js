@@ -55,7 +55,7 @@ export default function BusStationScreen({ route, navigation }) {
             )}
             {stationsOnRoute && (
                 <>
-                    <Text>Wanna set up destination and get alert?</Text>
+                    <Text>Select destination and get alert</Text>
                     <FlatList
                         data={stationsOnRoute}
                         keyExtractor={(item) => item.id.toString()}
@@ -65,7 +65,7 @@ export default function BusStationScreen({ route, navigation }) {
                             </TouchableOpacity>
                         )}
                     />
-                    <Button title="Skip?" onPress={() => setDestination(0)} />
+                    <Button title="Skip" onPress={() => setDestination({ name: 'No destination selected' })} />
                 </>
             )}
         </View>

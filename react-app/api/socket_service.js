@@ -1,5 +1,5 @@
-export default function getSocket(bus) {
-    const socket = new WebSocket('ws://localhost:8000/ws/bus/${bus.id}/${bus.route_id}/');
+export default function getSocket(bus, setMyBus) {
+    const socket = new WebSocket(`ws://localhost:8000/ws/bus/${bus.id}/${bus.route_id}/`);
 
     socket.addEventListener('open', (event) => {
         console.log('WebSocket connection opened:', event);
@@ -8,7 +8,7 @@ export default function getSocket(bus) {
     socket.addEventListener('message', (event) => {
         console.log('Message from server: ', event.data);
         const data = JSON.parse(event.data);
-        setBusData(data);
+        setMyBus(data);
     });
 
     socket.addEventListener('error', (event) => {

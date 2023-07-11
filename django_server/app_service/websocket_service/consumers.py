@@ -1,7 +1,6 @@
 import asyncio
 from channels.generic.websocket import AsyncWebsocketConsumer
 import json
-from openapi_seoul_service.bus.tasks import get_bus
 
 
 class BusConsumer(AsyncWebsocketConsumer):
@@ -11,6 +10,10 @@ class BusConsumer(AsyncWebsocketConsumer):
 
         await self.accept()
 
+        # Import after the settings are configured to avoid:
+        # ImproperlyConfigured: Requested setting OGD_API_KEY, but settings are not configure
+        from openapi_seoul_service.bus.tasks import get_bus
+
         initial_bus = await get_bus(self.id, self.route_id)
         await self.send(text_data=json.dumps(initial_bus))
 
@@ -18,6 +21,7 @@ class BusConsumer(AsyncWebsocketConsumer):
 
     async def update(self):
         while True:
+            from openapi_seoul_service.bus.tasks import get_bus
             bus = await get_bus(self.id, self.route_id)
             await self.send(text_data=json.dumps(bus))
             await asyncio.sleep(10)
