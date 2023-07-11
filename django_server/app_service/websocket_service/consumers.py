@@ -5,6 +5,7 @@ import json
 class BusConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         await self.accept()
+        print("Connected")
 
     async def disconnect(self, close_code):
         pass
@@ -13,7 +14,9 @@ class BusConsumer(AsyncWebsocketConsumer):
         text_data_json = json.loads(text_data)
         message = text_data_json['message']
 
-        # Do something with the message
+        await self.send(text_data=json.dumps({
+            'echo': message
+        }))
 
 
 class TrainConsumer(AsyncWebsocketConsumer):
