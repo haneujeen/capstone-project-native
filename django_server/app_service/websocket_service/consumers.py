@@ -1,22 +1,36 @@
+import asyncio
 from channels.generic.websocket import AsyncWebsocketConsumer
 import json
+from openapi_seoul_service.bus.tasks import get_bus
 
 
 class BusConsumer(AsyncWebsocketConsumer):
     async def connect(self):
+        self.id = self.scope['url_route']['kwargs']['id']
+        self.route_id = self.scope['url_route']['kwargs']['route_id']
+
         await self.accept()
-        print("Connected")
+
+        initial_bus = await get_bus(self.id, self.route_id)
+        await self.send(text_data=json.dumps(initial_bus))
+
+        self.update_task = asyncio.create_task(self.update())
+
+    async def update(self):
+        while True:
+            bus = await get_bus(self.id, self.route_id)
+            await self.send(text_data=json.dumps(bus))
+            await asyncio.sleep(10)
 
     async def disconnect(self, close_code):
-        pass
+        self.update_task.cancel()
 
     async def receive(self, text_data):
-        text_data_json = json.loads(text_data)
-        message = text_data_json['message']
-
-        await self.send(text_data=json.dumps({
-            'echo': message
-        }))
+        try:
+            text_data_json = json.loads(text_data)
+            message = text_data_json.get('message', 'No message key in JSON')
+        except json.JSONDecodeError:
+            message = text_data
 
 
 class TrainConsumer(AsyncWebsocketConsumer):
