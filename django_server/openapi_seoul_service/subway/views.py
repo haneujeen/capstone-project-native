@@ -111,8 +111,8 @@ def get_stations(request, name):
 
 @api_view(['GET'])
 def get_train(request, number):
-    url = f"http://swopenAPI.seoul.go.kr/api/subway/{SWOPENAPI_KEY}/xml/realtimeStationArrival/ALL"
-
+    url = f"http://swopenAPI.seoul.go.kr/api/subway/{SWOPENAPI_KEY}/json/realtimeStationArrival/ALL"
+    print("get_train")
     try:
         response = requests.get(url)
         data = response.json()
@@ -120,10 +120,12 @@ def get_train(request, number):
 
         # WARN: API is not consistent in its response format
         if 'realtimeArrivalList' in data:
-            data = response.json()
+            data = response.json()['realtimeArrivalList']
+            print(f"Number of trains: {len(data)}")  # To check the number of trains
 
+            train_response = {}
             for item in data:
-                if item['realtimeArrivalList']['bstatnNo'] == number:
+                if item['btrainNo'] == str(number):  # Ensure both are strings for comparison
                     train_response = {
                         'number': number,
                         'current_station': item['arvlMsg3'],
@@ -132,12 +134,17 @@ def get_train(request, number):
                         'type': 'subway',
                         'is_valid': True,
                         'response_code': '0',
-                        'message': data['errorMessage']['message'],
                     }
-
                     return Response(train_response)
                 else:
                     pass
+
+            train_response = {
+                'is_valid': True,
+                'response_code': '202',
+            }
+
+            return Response(train_response)
 
         else:
             response = {
@@ -145,7 +152,8 @@ def get_train(request, number):
                 'response_code': '202',
                 'message': data['message'],
             }
-            return Response(response)
+
+        return Response(response)
 
     except Exception as e:
         print(f"Exception occurred: {e}")
