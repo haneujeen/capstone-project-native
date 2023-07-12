@@ -32,6 +32,8 @@ OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
 SEOUL_API_KEY = os.getenv('SEOUL_API_KEY')
 
+SWOPENAPI_KEY = os.getenv('SWOPENAPI_KEY')
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 

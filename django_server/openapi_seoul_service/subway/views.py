@@ -6,57 +6,148 @@ from urllib.parse import unquote
 
 SEOUL_API_KEY = unquote(settings.SEOUL_API_KEY)
 
+SWOPENAPI_KEY = unquote(settings.SWOPENAPI_KEY)
 
-@api_view(['GET'])
-def get_stations(request, query):
+
+def _get_station_names(request, query):
     try:
         url = f"http://openapi.seoul.go.kr:8088/{SEOUL_API_KEY}/json/SearchSTNBySubwayLineInfo/1/1/%20/{query}/%20"
         response = requests.get(url)
         data = response.json()
-        print(data)
-        print("Trying")
 
         # WARN: API is not consistent in its response format
         if 'SearchSTNBySubwayLineInfo' in data:
-            if data['SearchSTNBySubwayLineInfo']['RESULT']['CODE'] == 'INFO-000':
-                print("before trying")
-                try:
-                    print("still trying")
-                    index = data['SearchSTNBySubwayLineInfo']['list_total_count']
-                    url = f"http://openapi.seoul.go.kr:8088/{SEOUL_API_KEY}/json/SearchSTNBySubwayLineInfo/1/{index}/%20/{query}/%20"
-                    response = requests.get(url)
-                    data = response.json()['SearchSTNBySubwayLineInfo']
-                    stations = []
-                    for item in data['row']:
-                        station_item = {
-                            'id': item['STATION_CD'],
-                            'name': item['STATION_NM'],
-                            'line': item['LINE_NUM'],
-                            'type': 'subway',
-                        }
-                        stations.append(station_item)
+            try:
+                index = data['SearchSTNBySubwayLineInfo']['list_total_count']
+                url = f"http://openapi.seoul.go.kr:8088/{SEOUL_API_KEY}/json/SearchSTNBySubwayLineInfo/1/{index}/%20/{query}/%20"
+                response = requests.get(url)
+                data = response.json()['SearchSTNBySubwayLineInfo']
+                names = set()
+                for item in data['row']:
+                    names.add(item['STATION_NM'])
 
-                    station_response = {
-                        'is_valid': True,
-                        'response_code': '0',
-                        'message': data['RESULT']['MESSAGE'],
-                        'list': stations
-                    }
+                return Response(names)
 
-                    return Response(station_response)
-
-                except Exception as e:
-                    print(f"Exception occurred: {e}")
-                    return Response({"error": str(e)}, status=502)
+            except Exception as e:
+                print(f"Exception occurred: {e}")
+                return Response({"error": str(e)}, status=502)
 
         elif 'RESULT' in data:
-            station_response = {
+            names = {
                 'is_valid': False,
                 'response_code': '202',
                 'message': data['RESULT']['MESSAGE'],
+            }
+            return Response(names)
+
+    except Exception as e:
+        print(f"Exception occurred: {e}")
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(['GET'])
+def get_stations(request, name):
+    try:
+        url = f"http://swopenapi.seoul.go.kr/api/subway/{SWOPENAPI_KEY}/json/realtimeStationArrival/0/1/{name}"
+        response = requests.get(url)
+        data = response.json()
+        print(data)
+
+        # WARN: API is not consistent in its response format
+        if 'realtimeArrivalList' in data:
+            try:
+                index = data['errorMessage']['total']
+                url = f"http://openapi.seoul.go.kr:8088/{SWOPENAPI_KEY}/json/realtimeStationArrival/0/{index}/{name}"
+                response = requests.get(url)
+                data = response.json()['realtimeArrivalList']
+
+                stations = []
+
+                for item in data:
+                    station_item = {
+                        'station': {
+                            'id': item['statnId'],
+                            'name': item['statnNm'],
+                            'line': item['subwayId'],
+                            'to': item['trainLineNm'].split(' - ')[1][:-2],  # 왕십리행 - 청량리방면
+                            'type': 'subway',
+                        },
+                        'train': {
+                            'number': item['btrainNo'],
+                            'stations_left': item['ordkey'][2:4],
+                            'stops_at': item['bstatnNm'],
+                            'screen_message': item['arvlMsg2'],
+                            'current_station': item['arvlMsg3'],
+                            'is_arrived': item['arvlCd'], # 0:진입, 1:도착, 2:출발, 3:전역출발, 4:전역진입, 5:전역도착, 99:운행중
+                            'type': 'subway',
+                        },
+                    }
+                    stations.append(station_item)
+
+                station_response = {
+                    'is_valid': True,
+                    'response_code': '0',
+                    'message': response.json()['errorMessage']['message'],
+                    'list': stations
+                }
+                return Response(station_response)
+
+            except Exception as e:
+                print(f"Exception occurred: {e}")
+                return Response({"error": str(e)}, status=502)
+
+        else:
+            station_response = {
+                'is_valid': False,
+                'response_code': '202',
+                'message': data['message'],
             }
             return Response(station_response)
 
     except Exception as e:
         print(f"Exception occurred: {e}")
         return Response({"error": str(e)}, status=500)
+
+
+@api_view(['GET'])
+def get_train(request, number):
+    url = f"http://swopenAPI.seoul.go.kr/api/subway/{SWOPENAPI_KEY}/xml/realtimeStationArrival/ALL"
+
+    try:
+        response = requests.get(url)
+        data = response.json()
+        print("getting train")
+
+        # WARN: API is not consistent in its response format
+        if 'realtimeArrivalList' in data:
+            data = response.json()
+
+            for item in data:
+                if item['realtimeArrivalList']['bstatnNo'] == number:
+                    train_response = {
+                        'number': number,
+                        'current_station': item['arvlMsg3'],
+                        'is_arrived': item['arvlCd'],  # 0:진입, 1:도착, 2:출발, 3:전역출발, 4:전역진입, 5:전역도착, 99:운행중
+                        'stops_at': item['bstatnNm'],
+                        'type': 'subway',
+                        'is_valid': True,
+                        'response_code': '0',
+                        'message': data['errorMessage']['message'],
+                    }
+
+                    return Response(train_response)
+                else:
+                    pass
+
+        else:
+            response = {
+                'is_valid': False,
+                'response_code': '202',
+                'message': data['message'],
+            }
+            return Response(response)
+
+    except Exception as e:
+        print(f"Exception occurred: {e}")
+        return Response({"error": str(e)}, status=500)
+
