@@ -57,12 +57,11 @@ def get_stations(request, name):
         if 'realtimeArrivalList' in data:
             try:
                 index = data['errorMessage']['total']
-                url = f"http://openapi.seoul.go.kr:8088/{SWOPENAPI_KEY}/json/realtimeStationArrival/0/{index}/{name}"
+                url = f"http://swopenapi.seoul.go.kr/api/subway/{SWOPENAPI_KEY}/json/realtimeStationArrival/0/{index}/{name}"
                 response = requests.get(url)
                 data = response.json()['realtimeArrivalList']
 
                 stations = []
-
                 for item in data:
                     station_item = {
                         'station': {
@@ -74,7 +73,7 @@ def get_stations(request, name):
                         },
                         'train': {
                             'number': item['btrainNo'],
-                            'stations_left': item['ordkey'][2:4],
+                            'stations_left': item['ordkey'][2:5],
                             'stops_at': item['bstatnNm'],
                             'screen_message': item['arvlMsg2'],
                             'current_station': item['arvlMsg3'],
