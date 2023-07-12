@@ -3,9 +3,8 @@ import { TextInput, StyleSheet, View, TouchableOpacity, Keyboard } from 'react-n
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faMagnifyingGlass } from '@fortawesome/free-solid-svg-icons';
 
-export default function SearchBar({ value, carType, onSubmit }) {
+export default function SearchBar({ value, onSubmit }) {
     const [localValue, setLocalValue] = useState(value);
-    const placeholder = `Search only ${carType === 'bus' ? 'bus stops' : 'subway stations'}`;
     const iconStyle = {
         color: localValue ? 'hsla(0, 0%, 30%, 1)' : 'hsla(0, 0%, 70%, 1)', 
         marginRight: 10
@@ -17,7 +16,6 @@ export default function SearchBar({ value, carType, onSubmit }) {
 
     const handlePress = () => {
         if (localValue) {
-            console.log("button pressed");
             Keyboard.dismiss();
             onSubmit(localValue);
         }
@@ -30,7 +28,7 @@ export default function SearchBar({ value, carType, onSubmit }) {
                     style={styles.textInput}
                     onChangeText={setLocalValue}
                     value={localValue}
-                    placeholder={carType ? placeholder : "Search all stations"}
+                    placeholder="Search stations"
                     onSubmitEditing={handlePress} // use onSubmitEditing instead of onKeyPress
                 />
                 <TouchableOpacity onPress={handlePress} disabled={!localValue}>
