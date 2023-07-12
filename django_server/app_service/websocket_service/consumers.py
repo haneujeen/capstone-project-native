@@ -9,6 +9,7 @@ class BusConsumer(AsyncWebsocketConsumer):
         self.route_id = self.scope['url_route']['kwargs']['route_id']
 
         await self.accept()
+        print("Websocket connection started")
 
         # Import after the settings are configured to avoid:
         # ImproperlyConfigured: Requested setting OGD_API_KEY, but settings are not configure

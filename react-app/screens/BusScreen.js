@@ -22,7 +22,8 @@ export default function BusScreen({ route }) {
             <Text>To: {destination.name}</Text>
             {/* Information here */}
             <View style={styles.innerContainer}>
-                <View style={styles.stationScreen}>
+                {myBus && (
+                    <View style={styles.stationScreen}>
                     <View style={styles.screenHeader}>
                         <Text>curren stop {myBus.previous_station.name} next stop ... follwing stop</Text>
                     </View>
@@ -33,6 +34,7 @@ export default function BusScreen({ route }) {
                         <Text>{bus.line_name} {bus.plate_number} {bus.current_speed} km/h {bus.travel_time}s</Text>
                     </View>
                 </View>
+                )}
             </View>
         </View>
     );

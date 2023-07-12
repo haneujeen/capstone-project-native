@@ -56,7 +56,7 @@ def get_stations(request, query):
 
 
 @api_view(['GET'])
-def get_bus_arrivals(request, id):
+def get_arrivals(request, id):
     url = 'http://ws.bus.go.kr/api/rest/stationinfo/getStationByUid'
 
     params = {

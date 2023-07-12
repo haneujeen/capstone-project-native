@@ -9,10 +9,10 @@ export default function BusStationScreen({ route, navigation }) {
     const [destination, setDestination] = useState(null);
 
     useEffect(() => {
-        if (destination) {
+        if (bus && destination) {
             navigation.navigate("Bus", { bus: bus, departure: departure, destination: destination });
         }
-    }, [destination]);
+    }, [bus, destination]);
 
     // Detailed information about arriving buses to this bus station.
     const selectBus = async (bus) => {
