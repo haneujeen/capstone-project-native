@@ -9,99 +9,89 @@ SEOUL_API_KEY = unquote(settings.SEOUL_API_KEY)
 SWOPENAPI_KEY = unquote(settings.SWOPENAPI_KEY)
 
 
-def _get_station_names(request, query):
-    try:
-        url = f"http://openapi.seoul.go.kr:8088/{SEOUL_API_KEY}/json/SearchSTNBySubwayLineInfo/1/1/%20/{query}/%20"
+def _get_station_names(query):
+    url = f"http://openapi.seoul.go.kr:8088/{SEOUL_API_KEY}/json/SearchSTNBySubwayLineInfo/1/1/%20/{query}/%20"
+    response = requests.get(url)
+    data = response.json()
+
+    if 'SearchSTNBySubwayLineInfo' in data:
+        index = data['SearchSTNBySubwayLineInfo']['list_total_count']
+        url = f"http://openapi.seoul.go.kr:8088/{SEOUL_API_KEY}/json/SearchSTNBySubwayLineInfo/1/{index}/%20/{query}/%20"
         response = requests.get(url)
-        data = response.json()
+        data = response.json()['SearchSTNBySubwayLineInfo']
+        names = set()
+        for item in data['row']:
+            names.add(item['STATION_NM'])
+        return names
 
-        # WARN: API is not consistent in its response format
-        if 'SearchSTNBySubwayLineInfo' in data:
-            try:
-                index = data['SearchSTNBySubwayLineInfo']['list_total_count']
-                url = f"http://openapi.seoul.go.kr:8088/{SEOUL_API_KEY}/json/SearchSTNBySubwayLineInfo/1/{index}/%20/{query}/%20"
-                response = requests.get(url)
-                data = response.json()['SearchSTNBySubwayLineInfo']
-                names = set()
-                for item in data['row']:
-                    names.add(item['STATION_NM'])
+    elif 'RESULT' in data:
+        raise Exception(data['RESULT']['MESSAGE'])
 
-                return Response(names)
-
-            except Exception as e:
-                print(f"Exception occurred: {e}")
-                return Response({"error": str(e)}, status=502)
-
-        elif 'RESULT' in data:
-            names = {
-                'is_valid': False,
-                'response_code': '202',
-                'message': data['RESULT']['MESSAGE'],
-            }
-            return Response(names)
-
-    except Exception as e:
-        print(f"Exception occurred: {e}")
-        return Response({"error": str(e)}, status=500)
+    else:
+        raise Exception("Unexpected response")
 
 
 @api_view(['GET'])
-def get_stations(request, name):
+def get_stations(request, query):
     try:
-        url = f"http://swopenapi.seoul.go.kr/api/subway/{SWOPENAPI_KEY}/json/realtimeStationArrival/0/1/{name}"
-        response = requests.get(url)
-        data = response.json()
-        print(data)
+        names = _get_station_names(query)
+        stations_dict = {}
 
-        # WARN: API is not consistent in its response format
-        if 'realtimeArrivalList' in data:
-            try:
+        for name in names:
+            url = f"http://swopenapi.seoul.go.kr/api/subway/{SWOPENAPI_KEY}/json/realtimeStationArrival/0/1/{name}"
+            response = requests.get(url)
+            data = response.json()
+
+            if 'realtimeArrivalList' in data:
                 index = data['errorMessage']['total']
                 url = f"http://swopenapi.seoul.go.kr/api/subway/{SWOPENAPI_KEY}/json/realtimeStationArrival/0/{index}/{name}"
                 response = requests.get(url)
                 data = response.json()['realtimeArrivalList']
 
-                stations = []
                 for item in data:
-                    station_item = {
-                        'station': {
-                            'id': item['statnId'],
-                            'name': item['statnNm'],
-                            'line': item['subwayId'],
-                            'to': item['trainLineNm'].split(' - ')[1][:-2],  # 왕십리행 - 청량리방면
-                            'type': 'subway',
-                        },
-                        'train': {
-                            'number': item['btrainNo'],
-                            'stations_left': item['ordkey'][2:5],
-                            'stops_at': item['bstatnNm'],
-                            'screen_message': item['arvlMsg2'],
-                            'current_station': item['arvlMsg3'],
-                            'is_arrived': item['arvlCd'], # 0:진입, 1:도착, 2:출발, 3:전역출발, 4:전역진입, 5:전역도착, 99:운행중
-                            'type': 'subway',
-                        },
-                    }
-                    stations.append(station_item)
+                    station_id = item['statnId']
+                    next_station = item['trainLineNm'].split(' - ')[1][:-2]  # the next station
+                    key = (station_id, next_station)
 
+                    if key not in stations_dict:
+                        stations_dict[key] = {
+                            'station': {
+                                'id': station_id,
+                                'name': item['statnNm'],
+                                'line': item['subwayId'],
+                                'next_station': next_station,
+                                'type': 'subway',
+                            },
+                            'train': [],
+                        }
+
+                    train_item = {
+                        'number': item['btrainNo'],
+                        'stations_left': item['ordkey'][2:5],
+                        'stops_at': item['bstatnNm'],
+                        'screen_message': item['arvlMsg2'],
+                        'current_station': item['arvlMsg3'],
+                        'is_arrived': item['arvlCd'],
+                        'type': 'subway',
+                    }
+
+                    stations_dict[key]['train'].append(train_item)
+
+            else:
                 station_response = {
-                    'is_valid': True,
-                    'response_code': '0',
-                    'message': response.json()['errorMessage']['message'],
-                    'list': stations
+                    'is_valid': False,
+                    'response_code': '202',
+                    'message': data['message'],
                 }
                 return Response(station_response)
 
-            except Exception as e:
-                print(f"Exception occurred: {e}")
-                return Response({"error": str(e)}, status=502)
-
-        else:
-            station_response = {
-                'is_valid': False,
-                'response_code': '202',
-                'message': data['message'],
-            }
-            return Response(station_response)
+        station_response = {
+            'is_valid': True,
+            'response_code': '0',
+            'message': response.json()['errorMessage']['message'],
+            'list': list(stations_dict.values())
+        }
+        return Response(station_response)
 
     except Exception as e:
         print(f"Exception occurred: {e}")
@@ -115,38 +105,163 @@ def get_train(request, number):
     try:
         response = requests.get(url)
         data = response.json()
-        print("getting train")
 
         # WARN: API is not consistent in its response format
         if 'realtimeArrivalList' in data:
             data = response.json()['realtimeArrivalList']
             message = response.json()['errorMessage']['message']
-            print(f"Number of trains: {len(data)}")  # To check the number of trains
 
             train_response = {}
             for item in data:
-                if item['btrainNo'] == str(number):  # Ensure both are strings for comparison
+                if item['btrainNo'] == str(number):
+
+                    print(item['updnLine'])
                     train_response = {
                         'number': number,
-                        'current_station': item['arvlMsg3'],
+                        'line': item['subwayId'],
+                        'direction': item['updnLine'],
+                        'current_station': {
+                            'name': item['arvlMsg3'],
+                        },
+                        'previous_station': {},
+                        'next_station': {},
                         'is_arrived': item['arvlCd'],  # 0:진입, 1:도착, 2:출발, 3:전역출발, 4:전역진입, 5:전역도착, 99:운행중
                         'stops_at': item['bstatnNm'],
                         'type': 'subway',
-                        'is_valid': True,
-                        'response_code': '0',
-                        'message': message,
+
                     }
-                    return Response(train_response)
+                    break
                 else:
                     pass
 
-            train_response = {
+            print(train_response)
+
+            for item in data:
+                if item['statnNm'] == train_response['current_station']['name']\
+                    and item['subwayId'] == train_response['line']\
+                    and item['updnLine'] == train_response['direction']:
+                    train_response['current_station']['id'] = item['statnId']
+                    train_response['previous_station']['id'] = item['statnFid']
+                    train_response['next_station']['id'] = item['statnTid']
+
+            for item in data:
+                if item['statnId'] == str(train_response['previous_station']['id']):
+                    train_response['previous_station']['name'] = item['statnNm']
+
+                if item['statnId'] == str(train_response['next_station']['id']):
+                    train_response['next_station']['name'] = item['statnNm']
+
+            if train_response:
+                response = {
+                    'is_valid': True,
+                    'response_code': '0',
+                    'message': message,
+                    'train': train_response,
+                }
+                return Response(response)
+            else:
+                response = {
+                    'is_valid': False,
+                    'response_code': '502',
+                    'message': message,
+                }
+                return Response(response)
+
+        else:
+            response = {
+                'is_valid': False,
+                'response_code': '202',
+                'message': data['message'],
+            }
+            return Response(response)
+
+    except Exception as e:
+        print(f"Exception occurred: {e}")
+        return Response({"error": str(e)}, status=500)
+
+
+@api_view(['GET'])
+def get_stations_on_route(request, name, line, direction, stops_at):
+    url = f"http://swopenAPI.seoul.go.kr/api/subway/{SWOPENAPI_KEY}/json/realtimeStationArrival/ALL"
+    print("get_train")
+    try:
+        response = requests.get(url)
+        data = response.json()
+
+        # WARN: API is not consistent in its response format
+        if 'realtimeArrivalList' in data:
+            data = response.json()['realtimeArrivalList']
+            message = response.json()['errorMessage']['message']
+
+            stations_on_route_response = []
+            start_id, start_name = None, ''
+            end_id, end_name = None, ''
+            print(message)
+            for item in data:
+                if item['statnNm'] == name and item['subwayId'] == line \
+                    and item['updnLine'] == direction:
+                    start_id = item['statnId']
+                    start_name = item['statnNm']
+
+                if item['statnNm'] == stops_at and item['subwayId'] == line \
+                    and item['updnLine'] == direction:
+                    end_id = item['statnId']
+                    end_name = item['statnNm']
+
+            print(start_id, start_name, end_id, end_name)
+
+            if start_id is not None and end_id is not None and int(end_id) > int(start_id):
+                index = list(range(int(start_id) + 1, int(end_id)))
+                print(index)
+                i = 1
+                for station_id in index:
+                    for item in data:
+                        if item['statnId'] == str(station_id) and item['updnLine'] == direction:
+                            station_item = {
+                                'index': i,
+                                'id': station_id,
+                                'name': item['statnNm']
+                            }
+
+                            print(station_item)
+                            stations_on_route_response.append(station_item)
+                            i += 1
+                            break # The API returns several same entries with the same ID, name, and direction
+                            # It's because entries are not only for the stations but also for the subway vehicles related somehow
+                            # The original response's "trainLineNm" field might help to understand
+            else:
+                index = list(range(int(start_id) - 1, int(end_id), -1))
+                i = 1
+                for station_id in index:
+                    for item in data:
+                        if item['statnId'] == str(station_id) and item['updnLine'] == direction:
+                            station_item = {
+                                'index': i,
+                                'id': station_id,
+                                'name': item['statnNm']
+                            }
+                            stations_on_route_response.append(station_item)
+                            i += 1
+                            break
+
+            if stations_on_route_response:
+
+                response = {
+                    'is_valid': True,
+                    'response_code': '0',
+                    'message': message,
+                    'list': stations_on_route_response,
+                }
+
+                return Response(response)
+
+            response = {
                 'is_valid': False,
                 'response_code': '502',
-                'message': message,
+                'message': "I did something wrong with the code",
             }
 
-            return Response(train_response)
+            return Response(response)
 
         else:
             response = {
@@ -160,4 +275,3 @@ def get_train(request, number):
     except Exception as e:
         print(f"Exception occurred: {e}")
         return Response({"error": str(e)}, status=500)
-
