@@ -120,6 +120,7 @@ def get_train(request, number):
         # WARN: API is not consistent in its response format
         if 'realtimeArrivalList' in data:
             data = response.json()['realtimeArrivalList']
+            message = response.json()['errorMessage']['message']
             print(f"Number of trains: {len(data)}")  # To check the number of trains
 
             train_response = {}
@@ -133,14 +134,16 @@ def get_train(request, number):
                         'type': 'subway',
                         'is_valid': True,
                         'response_code': '0',
+                        'message': message,
                     }
                     return Response(train_response)
                 else:
                     pass
 
             train_response = {
-                'is_valid': True,
-                'response_code': '202',
+                'is_valid': False,
+                'response_code': '502',
+                'message': message,
             }
 
             return Response(train_response)
