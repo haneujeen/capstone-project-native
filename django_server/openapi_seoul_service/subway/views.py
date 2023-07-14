@@ -9,19 +9,28 @@ SEOUL_API_KEY = unquote(settings.SEOUL_API_KEY)
 SWOPENAPI_KEY = unquote(settings.SWOPENAPI_KEY)
 
 
-def _get_station_names(query):
-    url = f"http://openapi.seoul.go.kr:8088/{SEOUL_API_KEY}/json/SearchSTNBySubwayLineInfo/1/1/%20/{query}/%20"
+def _get_station_names(search_text):
+    url = f"http://openapi.seoul.go.kr:8088/{SEOUL_API_KEY}/json/SearchSTNBySubwayLineInfo/1/1/%20/{search_text}/%20"
     response = requests.get(url)
     data = response.json()
 
     if 'SearchSTNBySubwayLineInfo' in data:
         index = data['SearchSTNBySubwayLineInfo']['list_total_count']
-        url = f"http://openapi.seoul.go.kr:8088/{SEOUL_API_KEY}/json/SearchSTNBySubwayLineInfo/1/{index}/%20/{query}/%20"
+        url = f"http://openapi.seoul.go.kr:8088/{SEOUL_API_KEY}/json/SearchSTNBySubwayLineInfo/1/{index}/%20/{search_text}/%20"
         response = requests.get(url)
         data = response.json()['SearchSTNBySubwayLineInfo']
-        names = set()
+
+        names = []
         for item in data['row']:
-            names.add(item['STATION_NM'])
+            name_item = {
+                'name': item['STATION_NM'],
+                'line': {
+                    'name': item['LINE_NUM'],
+                },
+                'fr_code': item['FR_CODE'],
+            }
+            names.append(name_item)
+
         return names
 
     elif 'RESULT' in data:
@@ -30,14 +39,14 @@ def _get_station_names(query):
     else:
         raise Exception("Unexpected response")
 
-
 @api_view(['GET'])
-def get_stations(request, query):
+def get_stations(request, search_text):
     try:
-        names = _get_station_names(query)
+        names = _get_station_names(search_text)
         stations_dict = {}
 
-        for name in names:
+        for name_item in names:
+            name = name_item['name']
             url = f"http://swopenapi.seoul.go.kr/api/subway/{SWOPENAPI_KEY}/json/realtimeStationArrival/0/1/{name}"
             response = requests.get(url)
             data = response.json()
@@ -81,8 +90,14 @@ def get_stations(request, query):
                 station_response = {
                     'is_valid': False,
                     'response_code': '202',
-                    'message': data['message'],
+                    'message': {
+                        'message': data['message'],
+                        'station_result': names,
+                        'train_message': "This is the off-service hours. There are no trains arriving at the stations: ",
+                        'station_message': f"There are no matching stations found from the endpoint {url}",
+                    },
                 }
+
                 return Response(station_response)
 
         station_response = {
