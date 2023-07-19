@@ -1,5 +1,14 @@
-export default function getSocket(bus, setMyBus) {
-    const socket = new WebSocket(`ws://localhost:8000/ws/bus/${bus.id}/${bus.route_id}/`);
+export default function getSocket(carType, car, setMyCar, token) {
+    let endpoint = '';
+    if (carType === 'bus') {
+        endpoint = `ws://172.30.1.59:8000/ws/bus/${car.id}/${car.route_id}/${token}/`;
+    } else if (carType === 'subway') {
+        endpoint = `ws://172.30.1.59:8000/ws/subway/${car.number}/${token}/`;
+    } else {
+        throw new Error(`Invalid carType ${carType}`);
+    }
+
+    const socket = new WebSocket(endpoint);
 
     socket.addEventListener('open', (event) => {
         console.log('WebSocket connection opened:', event);
@@ -8,7 +17,7 @@ export default function getSocket(bus, setMyBus) {
     socket.addEventListener('message', (event) => {
         console.log('Message from server: ', event.data);
         const data = JSON.parse(event.data);
-        setMyBus(data);
+        setMyCar(data);
     });
 
     socket.addEventListener('error', (event) => {

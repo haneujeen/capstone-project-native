@@ -1,16 +1,27 @@
 import axios from 'axios';
-
-const BASE_URL = 'http://localhost:8000';
+import { BASE_URL } from './config';
 
 export async function fetchBusStations(query) {
     let data;
     try {
         let response = await axios.get(`${BASE_URL}/bus/get_stations/${query}`);
-        data = await response.data;
-        console.log(data);
+        data = {data: response.data, status: response.status};
     } catch (error) {
         console.error(error);
-        data = `:( ${error})`
+        throw error;
+    }
+
+    return data;
+}
+
+export async function fetchBusArrivals(station_id) {
+    let data;
+    try {
+        let response = await axios.get(`${BASE_URL}/bus/get_arrivals/${station_id}`);
+        data = {data: response.data, status: response.status};
+    } catch (error) {
+        console.error(error);
+        throw error;
     }
 
     return data;
@@ -20,46 +31,35 @@ export async function fetchSubwayStations(query) {
     let data;
     try {
         let response = await axios.get(`${BASE_URL}/subway/get_stations/${query}`);
-        data = await response.data;
-        console.log(data);
+        data = {data: response.data, status: response.status};
     } catch (error) {
         console.error(error);
-        data = `:( ${error})`
+        throw error;
     }
 
     return data;
 }
 
-// Fetch the arrivals of bus/trains with station id
-export async function fetchBusArrivals(station_id) {
-    let data;
-    try {
-        // Fetch all stations from OGD
-        let response = await axios.get(`${BASE_URL}/bus/get_arrivals/${station_id}`);
-        data = await response.data;
-        console.log(data);
-    } catch (error) {
-        console.error(error);
-        data = `:( ${error})`
-    }
-
-    return data;
-}
-
-// Fetch all stations a bus or a train stops at
-export async function fetchStationsOnRoute(carType, route_id) {
+export async function fetchStationsOnRoute(carType, car) {
     let data;
     if (carType === 'bus') {
         try {
             // Fetch all stations from OGD
-            let response = await axios.get(`${BASE_URL}/bus/get_stations_on_route/${route_id}`);
-            data = await response.data;
-            console.log(data);
+            let response = await axios.get(`${BASE_URL}/bus/get_stations_on_route/${car.route_id}`);
+            data = {data: response.data, status: response.status};
         } catch (error) {
             console.error(error);
-            data = `:( ${error})`
+            data = {data: `😟 ${error})`, status: error.response ? error.response.status : 500};
+        }
+    } else if (carType === 'subway') {
+        const endpoint = `get_stations_on_route/${car.route_params.start_name}/${car.route_params.line}/${car.route_params.direction}/${car.route_params.stops_at}`;
+        try {
+            let response = await axios.get(`${BASE_URL}/subway/${endpoint}`);
+            data = {data: response.data, status: response.status};
+        } catch (error) {
+            console.error(error);
+            data = {data: `😟 ${error})`, status: error.response ? error.response.status : 500};
         }
     }
     return data;
 }
-
