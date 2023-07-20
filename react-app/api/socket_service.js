@@ -1,9 +1,9 @@
-export default function getSocket(carType, car, setMyCar, token) {
+export default function getSocket(carType, car, setMyCar) {
     let endpoint = '';
     if (carType === 'bus') {
-        endpoint = `ws://172.30.1.59:8000/ws/bus/${car.id}/${car.route_id}/${token}/`;
+        endpoint = `ws://172.30.1.59:8000/ws/bus/${car.id}/${car.route_id}/`;
     } else if (carType === 'subway') {
-        endpoint = `ws://172.30.1.59:8000/ws/subway/${car.number}/${token}/`;
+        endpoint = `ws://172.30.1.59:8000/ws/subway/${car.number}/`;
     } else {
         throw new Error(`Invalid carType ${carType}`);
     }
@@ -27,6 +27,13 @@ export default function getSocket(carType, car, setMyCar, token) {
     socket.addEventListener('close', (event) => {
         console.log('WebSocket connection closed:', event);
     });
+
+    const sendStopRequest = (request) => {
+        const requestData = JSON.stringify(request);
+        socket.send(requestData);
+    }
+
+    socket.sendStopRequest = sendStopRequest;
 
     return socket;
 }
