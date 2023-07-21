@@ -53,7 +53,7 @@ export default function List({ route, navigation }) {
                     <FontAwesomeIcon
                         icon={faShuttleVan}
                         size={27}
-                        style={{ color: stationType === 'bus' ? 'hsla(0, 0%, 20%, 1)' : 'hsla(0, 0%, 80%, 1)' }}
+                        style={{ color: stationType === 'bus' ? 'hsla(211, 86%, 50%, 1)' : 'hsla(9, 8%, 83%, 1)' }}
                     />
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -64,13 +64,14 @@ export default function List({ route, navigation }) {
                     <FontAwesomeIcon
                         icon={faSubway}
                         size={27}
-                        style={{ color: stationType === 'subway' ? 'hsla(0, 0%, 20%, 1)' : 'hsla(0, 0%, 80%, 1)' }}
+                        style={{ color: stationType === 'subway' ? 'hsla(211, 86%, 50%, 1)' : 'hsla(9, 8%, 83%, 1)' }}
                     />
                 </TouchableOpacity>
             </View>
+
+            <Text style={styles.subtitle}>STATIONS</Text>
             {stationType === 'bus' && busStations && (
                 <>
-                    <Text style={styles.subtitle}>STATIONS</Text>
                     <View style={styles.listView}>
                         <FlatList
                             data={busStations}
@@ -100,7 +101,6 @@ export default function List({ route, navigation }) {
             )}
             {stationType === 'subway' && subwayStations && (
                 <>
-                    <Text style={styles.subtitle}>STATIONS</Text>
                     <View style={styles.listView}>
                         <FlatList
                             data={subwayStations}
@@ -122,7 +122,7 @@ export default function List({ route, navigation }) {
 
             )}
             {stationType === 'subway' && subwayMessage && (
-                <View style={styles.innerContainer}>
+                <View>
                     <Text>{subwayMessage}</Text>
                 </View>
             )}
