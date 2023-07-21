@@ -1,12 +1,5 @@
-export default function getSocket(carType, car, setMyCar) {
-    let endpoint = '';
-    if (carType === 'bus') {
-        endpoint = `ws://172.30.1.59:8000/ws/bus/${car.id}/${car.route_id}/`;
-    } else if (carType === 'subway') {
-        endpoint = `ws://172.30.1.59:8000/ws/subway/${car.number}/`;
-    } else {
-        throw new Error(`Invalid carType ${carType}`);
-    }
+export function getBusSocket(location, setBus) {
+    let endpoint = `ws://172.30.1.59:8000/ws/bus/${location.x, location.y}/`;
 
     const socket = new WebSocket(endpoint);
 
@@ -17,7 +10,7 @@ export default function getSocket(carType, car, setMyCar) {
     socket.addEventListener('message', (event) => {
         console.log('Message from server: ', event.data);
         const data = JSON.parse(event.data);
-        setMyCar(data);
+        setBus(data);
     });
 
     socket.addEventListener('error', (event) => {
