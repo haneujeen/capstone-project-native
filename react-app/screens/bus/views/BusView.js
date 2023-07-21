@@ -1,23 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { SafeAreaView, Text } from "react-native";
-import { getBusSocket } from '../../../api/socket_service';
 
-export default function BusView() {
-    const [ socket, setSocket ] = useState(null);
-    const [ bus, setBus ] = useState(null);
-
+export default function BusView({ bus }) {
     useEffect(() => {
-        try {
-            let socket = getBusSocket(location, setBus);
-            setSocket(socket);
-        } catch (error) {
-            console.log(error);
-        }
-    })
+    }, [bus]);
 
     return (
         <SafeAreaView>
-            <Text>View</Text>
+            <Text>{bus.previous_station.name}</Text>
+            <Text>{bus.station.name}</Text>
+            <Text>{bus.longitude} {bus.latitude}</Text>
         </SafeAreaView>
     )
 }
