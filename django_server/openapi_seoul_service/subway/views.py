@@ -49,10 +49,11 @@ def _get_station_names(search_text):
         for item in data['row']:
             names.add(item['STATION_NM'])
 
-        return names
+        return names, ''
 
     elif 'RESULT' in data:
-        raise Exception(data['RESULT']['MESSAGE'])
+        print(Exception(data['RESULT']['MESSAGE']))
+        return [], data['RESULT']['MESSAGE']
 
     else:
         raise Exception("Unexpected response")
@@ -66,7 +67,7 @@ def _build_response(is_valid, message, status_code, **kwargs):
     response.update(kwargs)
     return Response(response, status=status_code)
 
-
+from ..serializers import SubwayStationSerializer
 """
 Fetch data for all stations and the trains arriving at each station:
     - Retrieve stations based on provided search text from the db, if there's no station filtered, update the db.
@@ -75,65 +76,84 @@ Fetch data for all stations and the trains arriving at each station:
 """
 @api_view(['GET'])
 def get_stations(request, search_text):
+    station_arrivals = []
+    message = ''
+
     try:
-        names = _get_station_names(search_text)
-        station_arrivals = []
-        for name in names:
-            station_list = SubwayStation.objects.filter(name__icontains=name)
-            if station_list:
-                for station in station_list:
-                    station_arrivals.append({
-                        'station': model_to_dict(station),
-                    })
+        names, names_message = _get_station_names(search_text)
+        print("Names:", names)
+        if names:
+            for name in names:
+                try:
+                    station_list = SubwayStation.objects.filter(name__icontains=name)
+                    if station_list:
+                        for station in station_list:
+                            station_serializer = SubwayStationSerializer(station)
+                            station_arrivals.append({
+                                'station': station_serializer.data,
+                            })
+                except SubwayStation.DoesNotExist:
+                    pass
 
-        if not station_arrivals:
-            populate_subway_stations()
-            return _build_response(False, "Station data has been updated. Please try again.", 404,
-                                   list=station_arrivals)
+            if not station_arrivals:
+                populate_subway_stations()
+                return _build_response(False, "Station data has been updated. Please try again.", 404,
+                                       list=station_arrivals)
 
-        for list_item in station_arrivals: # {'station': model_to_dict(station), 'train': {}}
-            name = list_item['station']['name']
-            url = f"{BASE_URL_SWOPENAPI}/realtimeStationArrival/0/1/{name}"
-            response = requests.get(url)
-            data = response.json()
-
-            if 'realtimeArrivalList' in data:
-                total = data['errorMessage']['total']
-                message = data['errorMessage']['message']
-                url = f"{BASE_URL_SWOPENAPI}/realtimeStationArrival/0/{total}/{name}"
+            for list_item in station_arrivals:  # {'station': model_to_dict(station), 'train': {}}
+                name = list_item['station']['name']
+                url = f"{BASE_URL_SWOPENAPI}/realtimeStationArrival/0/1/{name}"
                 response = requests.get(url)
-                arrivals_data = response.json()['realtimeArrivalList']
+                data = response.json()
 
-                for item in arrivals_data:
-                    if item['statnId'] == str(list_item['station']['station_id']) \
+                if 'realtimeArrivalList' in data:
+                    total = data['errorMessage']['total']
+                    message = data['errorMessage']['message']
+                    url = f"{BASE_URL_SWOPENAPI}/realtimeStationArrival/0/{total}/{name}"
+                    response = requests.get(url)
+                    arrivals_data = response.json()['realtimeArrivalList']
+
+                    list_item['trains'] = []
+
+                    for item in arrivals_data:
+                        if item['statnId'] == str(list_item['station']['station_id']) \
                             and item['updnLine'] == list_item['station']['direction']:
-                        list_item['train'] = {
-                            'number': item['btrainNo'],
-                            'stations_left': item['ordkey'][3:5],
-                            'stops_at': item['bstatnNm'],
-                            'screen_message_items': {
-                                'to_where_in_which': item['trainLineNm'],
-                                'message_item': item['arvlMsg2']
-                            },
-                            'current_station': item['arvlMsg3'],
-                            'is_arrived': item['arvlCd'],
-                            'type': 'subway',
-                        }
+                            train_data = {
+                                'number': item['btrainNo'],
+                                'type': 'subway',
+                                'screen_message_items': {
+                                    'to_where_in_which': item['trainLineNm'],
+                                    'message_item': item['arvlMsg2'],
+                                    'stations_left': item['ordkey'][3:5],
+                                    'current_station_name': item['arvlMsg3'],
+                                    'is_arrived': item['arvlCd'],
+                                },
+                                'route_params': {
+                                    'start_name': item['arvlMsg3'],
+                                    'line': list_item['station']['line'],
+                                    'direction': list_item['station']['direction'],
+                                    'stops_at': item['bstatnNm'],
+                                },
+                            }
+                            list_item['trains'].append(train_data)
 
+            if station_arrivals:  # If we have station arrivals
                 return _build_response(True, message, 200, list=station_arrivals)
-
-            else:
+            else:  # If we don't have any station arrivals
                 return _build_response(False, data['message'], 404, list=station_arrivals)
+        else:
+            print("no names")
+            return _build_response(False, names_message, 404)
 
     except Exception as e:
         print(f"Exception occurred: {e}")
-        return Response({"error": str(e)}, status=500)
+        return _build_response(False, str(e), 500)
 
 
-def _get_initial_train(number, data):
+# def _get_initial_train(number, data):
 
 
-def _fetch_previous_next_stations(train_response, data):
+# def _fetch_previous_next_stations(train_response, data):
 
 
 """
@@ -183,9 +203,11 @@ def get_train(request, number):
 
                         try:
                             train_response['previous_station']['name'] = \
-                                SubwayStation.objects.get(station_id=item['statnFid'], line=item['subwayId'], direction=item['updnLine']).name
+                                SubwayStation.objects.get(station_id=item['statnFid'], line=item['subwayId'],
+                                                          direction=item['updnLine']).name
                             train_response['next_station']['name'] = \
-                                SubwayStation.objects.get(station_id=item['statnTid'], line=item['subwayId'], direction=item['updnLine']).name
+                                SubwayStation.objects.get(station_id=item['statnTid'], line=item['subwayId'],
+                                                          direction=item['updnLine']).name
 
                         except SubwayStation.DoesNotExist:
                             train_response['previous_station']['name'] = None
@@ -204,10 +226,10 @@ def get_train(request, number):
         return Response({"error": str(e)}, status=500)
 
 
-def _get_station_ids(start_name, line, direction, stops_at, data):
+# def _get_station_ids(start_name, line, direction, stops_at, data):
 
 
-def _get_stations_on_route(station_ids, direction, data):
+# def _get_stations_on_route(station_ids, direction, data):
 
 
 """

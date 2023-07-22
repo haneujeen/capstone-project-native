@@ -37,7 +37,7 @@ SWOPENAPI_KEY = os.getenv('SWOPENAPI_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '172.30.1.59']
 
 
 # Application definition
@@ -50,9 +50,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'channels',
+    'rest_framework',
     'openai_api_service',
     'openapi_seoul_service',
     'app_service',
+
 ]
 
 ASGI_APPLICATION = 'django_server.routing.application'

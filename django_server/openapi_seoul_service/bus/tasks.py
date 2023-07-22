@@ -18,12 +18,16 @@ from django.conf import settings
 OGD_API_KEY = unquote(settings.OGD_API_KEY)
 async def get_bus(id, route_id):
     try:
-        index_station_id = await get_index_station_id(id)
-        previous_station, this_station, next_station = await get_stations(index_station_id, route_id)
+        location = await get_location(id)
+        previous_station, this_station, next_station = await get_stations(location['lastStnId'], route_id)
+
+        print("websocket sending bus")
 
         bus = {
             'id': id,
             'name': this_station.get('rtNm'),
+            'longitude': location['tmX'],
+            'latitude': location['tmY'],
             'previous_station': {
                 'id': previous_station.get('stId'),
                 'name': previous_station.get('stNm'),
@@ -41,10 +45,12 @@ async def get_bus(id, route_id):
                 'travel_time': this_station.get('traTime1'),
                 'speed': this_station.get('traSpd1'),
                 'is_last': this_station.get('isLast1'),
-                'is_full': this_station.get('isFullFlag1'),
+                'is_full': this_station.get('full1'),
                 'plate_number': this_station.get('plainNo1'),
             },
         }
+
+        print("Returning bus... ", bus['id'])
 
         return bus
 
@@ -52,7 +58,7 @@ async def get_bus(id, route_id):
         return {'error': str(e)}
 
 
-async def get_index_station_id(id):
+async def get_location(id):
     url = 'http://ws.bus.go.kr/api/rest/buspos/getBusPosByVehId'
 
     params = {
@@ -65,7 +71,7 @@ async def get_index_station_id(id):
         response = await client.get(url, params=params)
         data = response.json()
 
-    index_station_id = data['msgBody']['itemList'][0]['lastStnId']
+    index_station_id = data['msgBody']['itemList'][0]
 
     return index_station_id
 
