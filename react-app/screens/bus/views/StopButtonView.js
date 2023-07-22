@@ -1,22 +1,37 @@
-import { SafeAreaView, Text } from "react-native";
+import { SafeAreaView, Text, TouchableOpacity } from "react-native";
 import * as Device from 'expo-device';
-import { v4 as uuidv4 } from 'uuid';
-import { useEffect } from "react";
 
-export default function StopButtonView({ bus }) {
+import { useEffect, useState } from "react";
+
+export default function StopButtonView({ bus, uuid, socket }) {
 
     let deviceName = Device.deviceName;
-    let uuid = uuidv4();
-
+    const [stopBusData, setStopBusData] = useState(null);
+    
     useEffect(() => {
     }, [bus]);
 
+    const onStopButtonPress = () => {
+        // Store the current bus data when stop button is pressed
+        setStopBusData({...bus, deviceName, uuid});
+        socket.sendStopRequest(stopBusData)
+    };
+
     return (
         <SafeAreaView>
-            <Text>Stop</Text>
+            <TouchableOpacity onPress={onStopButtonPress}>
+                <Text>Stop</Text>
+            </TouchableOpacity>
+            {stopBusData && (
+                <>
+                    <Text>{stopBusData.deviceName} {stopBusData.uuid}</Text>
+                    <Text>location: {stopBusData.longitude} {stopBusData.latitude}</Text>
+                    <Text>bus Id: {stopBusData.id} Request to stop at: {stopBusData.station.name}</Text>
+                </>
+            )}
             <Text>{deviceName} {uuid}</Text>
             <Text>location: {bus.longitude} {bus.latitude}</Text>
-            <Text>bus Id: {bus.id}</Text>
+            <Text>bus Id: {bus.id} Request to stop at: {bus.station.name}</Text>
         </SafeAreaView>
     )
 }

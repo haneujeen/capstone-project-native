@@ -3,21 +3,26 @@ import { SafeAreaView, Text } from "react-native";
 import { getBusSocket } from '../../../api/socket_service';
 import BusView from './BusView';
 import StopButtonView from './StopButtonView';
+import { v4 as uuidv4 } from 'uuid';
+import PushNotificationView from './PushNotificationView';
 
 export default function SocketView({ location }) {
     const [ socket, setSocket ] = useState(null);
     const [ bus, setBus ] = useState(null);
     const { latitude, longitude } = location.coords;
 
-    let myLocation = {x: longitude, y: latitude}
+    //let myLocation = {x: longitude, y: latitude}
+    let myLocation = {x: 127.0126091716, y: 37.6513809333}
+    let uuid = uuidv4();
 
     useEffect(() => {
-        //try {
-            //let socket = getBusSocket(myLocation, setBus);
-            //setSocket(socket);
-        //} catch (error) {
-            //console.log(error);
-        //}
+        try {
+            let socket = getBusSocket(myLocation, setBus);
+            setSocket(socket);
+        } catch (error) {
+            console.log(error);
+        }
+        /*
         let data = JSON.parse(`{
             "id": "id",
             "name": "this_station.get('rtNm')",
@@ -44,6 +49,8 @@ export default function SocketView({ location }) {
         }`)
 
         setBus(data)
+         */
+        
     }, [])
 
     return (
@@ -53,7 +60,8 @@ export default function SocketView({ location }) {
                 <>
                     <Text>{bus.id} {bus.name}</Text>
                     <BusView bus={bus}></BusView>
-                    <StopButtonView bus={bus}></StopButtonView>
+                    <StopButtonView bus={bus} uuid={uuid} socket={socket}></StopButtonView>
+                    <PushNotificationView></PushNotificationView>
                 </>
             )}
         </SafeAreaView>
