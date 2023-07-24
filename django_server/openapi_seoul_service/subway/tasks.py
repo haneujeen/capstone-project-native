@@ -65,9 +65,11 @@ async def get_train(number):
                         train['previous_station']['name'] = None
                         train['next_station']['name'] = None
 
-        print("sending train... ", train)
-        return train
-
+        if train:
+            print("sending train... ", train)
+            return train
+        else:
+            return None
     else:
         print("Cannot detect any subway trains")
         return None
