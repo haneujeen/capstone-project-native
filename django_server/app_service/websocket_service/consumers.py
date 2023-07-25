@@ -119,6 +119,11 @@ class BusConsumer(AsyncWebsocketConsumer):
             # start sending updates about the likely bus to the client
             self.update_task = asyncio.create_task(self.update(likely_bus['id'], likely_bus['route']))
             print("send_task added")
+
+            fake_app_url = "http://127.0.0.1:5001/receive_likely_bus"
+            async with httpx.AsyncClient() as client:
+                response = await client.post(fake_app_url, json=likely_bus)
+
         else:
             print("Cannot detect any bus from the location in the request")
 
@@ -139,11 +144,16 @@ class BusConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data):
         try:
-            text_data_json = json.loads(text_data)
-            message = text_data_json.get('message', 'No message key in JSON')
+            data = json.loads(text_data)
+            print(data)
+            request = data.get('request', 'No message key in JSON')
 
-            if message == 'stop':
-                print("stop")
+            if request == 'stop':
+                print("stop with ", data)
+
+                fake_app_dashboard_url = "http://127.0.0.1:5001/receive_stop_request"
+                async with httpx.AsyncClient() as client:
+                    response = await client.post(fake_app_dashboard_url, json=data)
 
         except json.JSONDecodeError:
             pass
