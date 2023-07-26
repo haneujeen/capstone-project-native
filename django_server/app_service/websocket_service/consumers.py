@@ -6,7 +6,7 @@ from urllib.parse import unquote
 import math
 
 
-async def _find_likely_bus(x, y, bus_list, threshold=0.001):
+async def _find_likely_bus(x, y, bus_list, threshold=0.00025):
     # Calculate the distance from a bus and a user for all the nearing buses in the list
     user_x = float(x)
     user_y = float(y)
@@ -17,11 +17,10 @@ async def _find_likely_bus(x, y, bus_list, threshold=0.001):
         distance = math.sqrt((bus_x - user_x) ** 2 + (bus_y - user_y) ** 2)
         distances.append(distance)
 
-    min_distance = min(distances)
-    min_index = distances.index(min_distance)
+    min_index = distances.index(min(distances))
 
     # If the minimum distance is within the threshold, return the bus
-    if min_distance <= threshold:
+    if min(distances) <= threshold:
         # the bus the user is most likely inside of
         likely_bus = bus_list[min_index]
         return likely_bus
@@ -51,7 +50,7 @@ class BusConsumer(AsyncWebsocketConsumer):
             'serviceKey': OGD_API_KEY,
             'tmX': self.x,
             'tmY': self.y,
-            'radius': 60,
+            'radius': 50,
             'resultType': 'json',
         }
 
@@ -126,7 +125,7 @@ class BusConsumer(AsyncWebsocketConsumer):
             print("Buses: ", bus_list)
             print(self.x, self.y)  # Requested coords
 
-            likely_bus = _find_likely_bus(self.x, self.y, 0.001)
+            likely_bus = _find_likely_bus(self.x, self.y, bus_list)
 
             print("likely bus: ", likely_bus)
 
