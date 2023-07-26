@@ -1,10 +1,34 @@
 import asyncio
 import json
-from asgiref.sync import sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 import httpx
 from urllib.parse import unquote
 import math
+
+
+async def _find_likely_bus(x, y, bus_list, threshold=0.001):
+    # Calculate the distance from a bus and a user for all the nearing buses in the list
+    user_x = float(x)
+    user_y = float(y)
+    distances = []
+    for bus in bus_list:
+        bus_x = float(bus['x'])
+        bus_y = float(bus['y'])
+        distance = math.sqrt((bus_x - user_x) ** 2 + (bus_y - user_y) ** 2)
+        distances.append(distance)
+
+    min_distance = min(distances)
+    min_index = distances.index(min_distance)
+
+    # If the minimum distance is within the threshold, return the bus
+    if min_distance <= threshold:
+        # the bus the user is most likely inside of
+        likely_bus = bus_list[min_index]
+        return likely_bus
+    else:
+        # If no bus is within the threshold, return None
+        return None
+
 
 class BusConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -17,12 +41,14 @@ class BusConsumer(AsyncWebsocketConsumer):
         self.task = asyncio.create_task(self.find_bus())
 
     async def find_bus(self):
-        key = unquote("GMDNZxLlo35v0mYu1b%2BEExd5aIdZ93RCUBhUBo2w73LWCtz%2Ft%2F%2FKdGfzDVUdcyqljjwvNa5Dtd56uELhovFZRw%3D%3D")
+        from django.conf import settings
+        OGD_API_KEY = unquote(settings.OGD_API_KEY)
+
         # Search the stations nearby with the coords
         url = 'http://ws.bus.go.kr/api/rest/stationinfo/getStationByPos'
 
         params = {
-            'serviceKey': key,
+            'serviceKey': OGD_API_KEY,
             'tmX': self.x,
             'tmY': self.y,
             'radius': 60,
@@ -47,7 +73,7 @@ class BusConsumer(AsyncWebsocketConsumer):
                 bus_ids = []
                 print("making request for id ", id)
                 params = {
-                    'serviceKey': key,
+                    'serviceKey': OGD_API_KEY,
                     'arsId': id,
                     'resultType': 'json',
                 }
@@ -74,7 +100,7 @@ class BusConsumer(AsyncWebsocketConsumer):
                 for bus_id in bus_ids:
                     print("Getiing bus ", bus_id, "'s current coordinates")
                     params = {
-                        'serviceKey': key,
+                        'serviceKey': OGD_API_KEY,
                         'vehId': bus_id['id'],
                         'resultType': 'json',
                     }
@@ -99,30 +125,19 @@ class BusConsumer(AsyncWebsocketConsumer):
 
             print("Buses: ", bus_list)
             print(self.x, self.y)  # Requested coords
-            # Calculate the distance from a bus and a user for all the nearing buses in the list
-            user_x = float(self.x)
-            user_y = float(self.y)
-            distances = []
-            for bus in bus_list:
-                bus_x = float(bus['x'])
-                bus_y = float(bus['y'])
-                distance = math.sqrt((bus_x - user_x) ** 2 + (bus_y - user_y) ** 2)
-                distances.append(distance)
 
-            min_index = distances.index(min(distances))
-
-            # the bus the user is most likely inside of
-            likely_bus = bus_list[min_index]
+            likely_bus = _find_likely_bus(self.x, self.y, 0.001)
 
             print("likely bus: ", likely_bus)
 
-            # start sending updates about the likely bus to the client
-            self.update_task = asyncio.create_task(self.update(likely_bus['id'], likely_bus['route']))
-            print("send_task added")
+            if likely_bus:
+                # start sending updates about the likely bus to the client
+                self.update_task = asyncio.create_task(self.update(likely_bus['id'], likely_bus['route']))
+                print("send_task added")
 
-            fake_app_url = "http://127.0.0.1:5001/receive_likely_bus"
-            async with httpx.AsyncClient() as client:
-                response = await client.post(fake_app_url, json=likely_bus)
+                fake_app_url = "http://127.0.0.1:5001/receive_likely_bus"
+                async with httpx.AsyncClient() as client:
+                    response = await client.post(fake_app_url, json=likely_bus)
 
         else:
             print("Cannot detect any bus from the location in the request")
