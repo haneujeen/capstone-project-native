@@ -18,6 +18,7 @@ export default function SearchBar({ value, onSubmit }) {
         if (localValue) {
             Keyboard.dismiss();
             onSubmit(localValue);
+            setLocalValue('');
         }
     };
 
@@ -28,13 +29,14 @@ export default function SearchBar({ value, onSubmit }) {
                     style={styles.textInput}
                     onChangeText={setLocalValue}
                     value={localValue}
-                    placeholder="Search stations"
-                    onSubmitEditing={handlePress} // use onSubmitEditing instead of onKeyPress
+                    placeholder="Start by Searching Station"
+                    onSubmitEditing={handlePress}
                 />
                 <TouchableOpacity onPress={handlePress} disabled={!localValue}>
                     <FontAwesomeIcon
                         icon={faMagnifyingGlass}
                         style={iconStyle}
+                        size={18}
                     />
                 </TouchableOpacity>
             </View>
@@ -53,12 +55,13 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: 'hsla(0, 0%, 100%, 1)',
         height: 40,
-        width: '80%',
+        width: '100%',
         marginTop: 10,
-        borderRadius: 13,
+        borderRadius: 10,
         paddingLeft: 10,
     },
     textInput: {
         flex: 1,
+        fontSize: 16,
     },
 });

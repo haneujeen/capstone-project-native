@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View, SafeAreaView, TouchableOpacity, Switch } from 'react-native';
 import getSocket from '../../api/socket_service';
-import { registerForPushNotificationsAsync } from '../../api/expo-notification';
-import { BASE_URL } from '../../api/config';
-import { RFValue } from "react-native-responsive-fontsize";
-import * as Location from 'expo-location';
-import { BusMessage } from '../components/Prompts';
+import { BusText } from '../components/ScreenText';
 import { FontAwesomeIcon } from '@fortawesome/react-native-fontawesome';
 import { faHand, faBell } from '@fortawesome/free-solid-svg-icons';
+import { calculateDistance } from './location';
+import * as Location from 'expo-location';
+import * as Device from 'expo-device';
 
 export default function Bus({ route }) {
     const { bus, departure, destination } = route.params;
@@ -16,6 +15,7 @@ export default function Bus({ route }) {
     const [location, setLocation] = useState(null);
     const [errorMsg, setErrorMsg] = useState(null);
     const [isEnabled, setIsEnabled] = useState(false);
+    const [distance, setDistance] = useState(null);
 
     useEffect(() => {
         (async () => {
@@ -45,6 +45,20 @@ export default function Bus({ route }) {
     }
 
     useEffect(() => {
+        if (myBus && location) {
+            const userLat = location.coords.latitude;
+            const userLon = location.coords.longitude;
+            const busLat = myBus.latitude;
+            const busLon = myBus.longitude;
+
+            const distance = calculateDistance(userLat, userLon, busLat, busLon);
+            setDistance(distance)
+        } else {
+            setDistance(31)
+        }
+    }, [myBus])
+
+    useEffect(() => {
         const fetchSomeData = async () => {
             // Do some async operation
         };
@@ -56,9 +70,29 @@ export default function Bus({ route }) {
           // If isEnabled is false, do something else
         }
       }, [isEnabled]);  // Add isEnabled as a dependency      
+/**
+ * const handleRequestStop = () => {
+        if (distance <= 30) {
+            console.log("Sender is in the range.");
 
-    const handleRequestStop = () => {
+            let deviceId = DeviceInfo.getUniqueId();
+            let deviceManufacturer = DeviceInfo.getManufacturer();
+            const stopRequest = { 
+                action: 'stop', 
+                location: [longitude, latitude], 
+                deviceInfo: {
+                    id: deviceId,
+                    manufacturer: deviceManufacturer
+                }
+            };
+            
+            socket.sendStopRequest(stopRequest);
+        } else {
+            console.log("Distance between sender and receiver is too far.");
+        }
     }
+ */
+    
 
     const handleSwitchChange = (newValue) => {
         setIsEnabled(newValue);
@@ -68,7 +102,7 @@ export default function Bus({ route }) {
         <SafeAreaView style={styles.container}>
             {myBus && (
                 <>
-                    {BusMessage(myBus?.station.name, myBus?.next_station.name)}
+                    {BusText(myBus?.station.name, myBus?.next_station.name)}
                     <View style={styles.screenContainer}>
                         <View style={styles.busScreen}>
                             <View style={styles.screenHeader}>
@@ -94,7 +128,10 @@ export default function Bus({ route }) {
                                     style={{color: "hsla(0, 0%, 100%, 1)"}} 
                                 />
                             </View>
-                            <Text style={styles.label}>Request to stop {myBus?.longitude} {myBus?.latitude}</Text>
+                            <View style={{flexDirection: 'column', alignItems: 'flex-start', width: '90%',}}>
+                                <Text style={styles.label}>Request to stop {myBus?.longitude} {myBus?.latitude}</Text>
+                                <Text style={styles.description}>Requesting to stop requires a user's current location. Within the </Text>
+                            </View>        
                         </TouchableOpacity>
                         <TouchableOpacity style={styles.listContainer}>
                             <View style={styles.bellIconContainer}>
@@ -104,7 +141,10 @@ export default function Bus({ route }) {
                                     style={{color: "hsla(0, 0%, 100%, 1)"}} 
                                 />
                             </View>
-                            <Text style={styles.label}>Push notification</Text>
+                            <View style={{flexDirection: 'column', alignItems: 'flex-start', width: '90%',}}>
+                                <Text style={styles.label}>Push Notifications</Text>
+                                <Text style={styles.description}>Get heads-ups on where the bus is heading, and request to stop at your destination.</Text>
+                            </View> 
                             <View style={{ flex: 1, alignItems: 'flex-end', }}>
                             <Switch
                                 style={{ transform: [{ scaleX: .7 }, { scaleY: .7 }] }}
@@ -169,8 +209,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     label: {
-        alignSelf: 'center',
-        marginStart: 8,
+        marginHorizontal: 10,
     },
     bellIconContainer: {
         backgroundColor: 'hsla(130, 78%, 60%, 1)',
@@ -179,5 +218,10 @@ const styles = StyleSheet.create({
         aspectRatio: 1,
         alignItems: 'center',
         justifyContent: 'center',
-    }
+    },
+    description: {
+        color: 'hsla(0, 0%, 53%, 1)',
+        fontSize: 12,
+        marginHorizontal: 10,
+    },
 });

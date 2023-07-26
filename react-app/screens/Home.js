@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, Linking, Button, Platform } from 'react-native';
+import { StyleSheet, View, Text, Linking, ActivityIndicator } from 'react-native';
 import axios from 'axios';
 
 import SearchBar from './components/SearchBar';
@@ -10,8 +10,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 export default function Home() {
     const [searchText, setSearchText] = useState('');
     const navigation = useNavigation();
+    const [loading, setLoading] = useState(false);
 
     const onSubmit = async (value) => {
+        setLoading(true);
         let result;
         let busStationsResults, subwayStationsResults;
         let busStationsMessage, subwayStationsMessage;
@@ -24,18 +26,20 @@ export default function Home() {
         }
 
         result = await fetchSubwayStations(value);
-        if (result.status === 200) {
+        if (result.status && result.status === 200) {
             subwayStationsResults = result.data.list;
         } else {
-            subwayStationsMessage = result.data.message;
+            subwayStationsMessage = result.error;
         }
+        
+        setLoading(false);
 
         navigation.navigate('List', {
             busStations: busStationsResults,
             busMessage: busStationsMessage,
             subwayStations: subwayStationsResults,
             subwayMessage: subwayStationsMessage
-        });
+        }); 
     }
 
     return (
@@ -53,9 +57,13 @@ export default function Home() {
                     <SearchBar value={searchText} onChangeText={setSearchText} onSubmit={onSubmit} />
                 </View>
             </View>
+            {loading && (
+                <View style={styles.spinnerContainer}>
+                    <ActivityIndicator size="medium" color="hsla(0, 0%, 53%, 1)" />
+                </View>
+            )}
         </SafeAreaView>
     );
-    
 }
 
 const styles = StyleSheet.create({
@@ -89,6 +97,16 @@ const styles = StyleSheet.create({
         flex: 1, 
         justifyContent: 'center', 
         width: '100%', 
+    },
+    spinnerContainer: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        top: 400,
+        bottom: 0,
+        alignItems: 'center',
+        justifyContent: 'center',
+        
     },
 });
 
