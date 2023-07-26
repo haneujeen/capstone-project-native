@@ -14,14 +14,26 @@
       "assetBundlePatterns": [
         "**/*"
       ],
+      "plugins": [
+        [
+          "expo-location",
+          {
+            "locationAlwaysAndWhenInUsePermission": "Allow $(PRODUCT_NAME) to use your location."
+          }
+        ]
+      ],
       "ios": {
-        "supportsTablet": true
+        "supportsTablet": true,
+        "bundleIdentifier": "com.haneujeen.reactapp",
+        "buildNumber": "1.0.0"
       },
       "android": {
         "adaptiveIcon": {
           "foregroundImage": "./assets/adaptive-icon.png",
           "backgroundColor": "#ffffff"
-        }
+        },
+        "package": "com.haneujeen.reactapp",
+        "versionCode": 1
       },
       "web": {
         "favicon": "./assets/favicon.png"
