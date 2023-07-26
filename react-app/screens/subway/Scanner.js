@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import { BarCodeScanner } from 'expo-barcode-scanner';
 import { useNavigation } from '@react-navigation/native';
+import Screen from './Screen';
 
 export default function Scanner() {
     const [hasPermission, setHasPermission] = useState(null);
@@ -21,7 +22,7 @@ export default function Scanner() {
     const handleBarCodeScanned = ({ type, data }) => {
         alert(`Bar code with type ${type} and data ${data} has been scanned!`);
         setHasPermission(null); // turn off the scanner
-        navigation.navigate('Entry'); // navigate back to Home screen
+        navigation.navigate('Screen', { trainId: data }); // navigate back to Home screen
     };
 
     if (hasPermission === null) {

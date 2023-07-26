@@ -13,8 +13,18 @@ export default function StopButtonView({ bus, uuid, socket }) {
 
     const onStopButtonPress = () => {
         // Store the current bus data when stop button is pressed
-        setStopBusData({...bus, deviceName, uuid});
-        socket.sendStopRequest(stopBusData)
+        let data = {
+            'deviceName': deviceName,
+            'uuid': uuid,
+            'busId': bus.id,
+            'stationName': bus.station.name,
+            'location': [bus.longitude, bus.latitude],
+            'request': 'stop'
+        }
+        console.log("setting stopBusData: ", data)
+        setStopBusData(data);
+
+        socket.sendStopRequest(data);
     };
 
     return (
@@ -25,8 +35,8 @@ export default function StopButtonView({ bus, uuid, socket }) {
             {stopBusData && (
                 <>
                     <Text>{stopBusData.deviceName} {stopBusData.uuid}</Text>
-                    <Text>location: {stopBusData.longitude} {stopBusData.latitude}</Text>
-                    <Text>bus Id: {stopBusData.id} Request to stop at: {stopBusData.station.name}</Text>
+                    <Text>location: {stopBusData.location}</Text>
+                    <Text>bus Id: {stopBusData.busId} Request to stop at: {stopBusData.stationName}</Text>
                 </>
             )}
             <Text>{deviceName} {uuid}</Text>
