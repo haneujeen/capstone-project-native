@@ -1,3 +1,5 @@
+import { dummyBus, dummyTrain } from "./dummies";
+
 export function getBusSocket(location, setBus) {
     let endpoint = `ws://172.30.1.59:8000/ws/bus/${location.x}/${location.y}/`;
 
@@ -9,7 +11,12 @@ export function getBusSocket(location, setBus) {
 
     socket.onmessage = (event) => {
         console.log('Message from server: ', event.data);
-        const data = JSON.parse(event.data);
+        let data;
+        if (event.data === null) {
+            data = dummyBus();
+        } else {
+            data = JSON.parse(event.data);
+        }
         setBus(data);
     };
 
@@ -32,7 +39,7 @@ export function getBusSocket(location, setBus) {
 }
 
 export function getSubwaySocket(trainId, setTrain) {
-    let socket = new WebSocket(`ws:/172.30.1.59:8000/ws/subway/${trainId}/`);
+    let socket = new WebSocket(`ws://172.30.1.59:8000/ws/subway/${trainId}/`);
 
     socket.onopen = () => {
         console.log('WebSocket is open now.');
@@ -42,8 +49,8 @@ export function getSubwaySocket(trainId, setTrain) {
         console.log('Message from server: ', event.data);
 
         let data;
-        if (event.data === 'null') {
-            data = JSON.parse(dummyTrain);
+        if (event.data === null) {
+            data = dummyTrain();
         } else {
             data = JSON.parse(event.data);
         }

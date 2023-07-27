@@ -55,7 +55,8 @@ async def get_bus(id, route_id):
         return bus
 
     except Exception as e:
-        return {'error': str(e)}
+        print("error: ", e)
+        return None
 
 
 async def get_location(id):

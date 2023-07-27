@@ -6,7 +6,7 @@ from urllib.parse import unquote
 import math
 
 
-async def _find_likely_bus(x, y, bus_list, threshold=0.00025):
+def _find_likely_bus(x, y, bus_list, threshold=0.00025):
     # Calculate the distance from a bus and a user for all the nearing buses in the list
     user_x = float(x)
     user_y = float(y)
@@ -26,7 +26,9 @@ async def _find_likely_bus(x, y, bus_list, threshold=0.00025):
         return likely_bus
     else:
         # If no bus is within the threshold, return None
-        return None
+        # return None
+        likely_bus = bus_list[min_index]
+        return likely_bus
 
 
 class BusConsumer(AsyncWebsocketConsumer):
@@ -137,9 +139,13 @@ class BusConsumer(AsyncWebsocketConsumer):
                 fake_app_url = "http://127.0.0.1:5001/receive_likely_bus"
                 async with httpx.AsyncClient() as client:
                     response = await client.post(fake_app_url, json=likely_bus)
+            else:
+                print("Cannot detect any bus from the location in the request")
+                asyncio.create_task(self.send(text_data=json.dumps(None)))
 
         else:
             print("Cannot detect any bus from the location in the request")
+            asyncio.create_task(self.send(text_data=json.dumps(None)))
 
 
     async def update(self, id, route_id):
@@ -175,6 +181,7 @@ class BusConsumer(AsyncWebsocketConsumer):
 
 class SubwayConsumer(AsyncWebsocketConsumer):
     async def connect(self):
+        print("ws created")
         self.id = self.scope['url_route']['kwargs']['id']
 
         await self.accept()
