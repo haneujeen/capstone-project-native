@@ -24,13 +24,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv()
 
 SECRET_KEY = os.getenv("secret_key")
-
 OGD_API_KEY = os.getenv('OGD_API_KEY')
-
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
-
 SEOUL_API_KEY = os.getenv('SEOUL_API_KEY')
-
 SWOPENAPI_KEY = os.getenv('SWOPENAPI_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
@@ -50,7 +46,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'channels',
     'rest_framework',
-    'openai_api_service',
     'openapi_seoul_service',
     'app_service',
 
