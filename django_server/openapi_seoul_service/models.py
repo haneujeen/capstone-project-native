@@ -10,6 +10,8 @@ class SubwayStation(models.Model):
     transfer_available = models.JSONField(default=list)
     accessibility_information = models.TextField(null=True, blank=True)
     POI_locator = models.TextField(null=True, blank=True)
+    accessibility_information_text = models.TextField(null=True, blank=True)
+    POI_locator_text = models.TextField(null=True, blank=True)
 
     class Meta:
         unique_together = [('station_id', 'direction')]
