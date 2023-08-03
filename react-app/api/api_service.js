@@ -6,7 +6,7 @@ export async function fetchStationsOnRoute(carType, car) {
     if (carType === 'bus') {
         try {
             // Fetch all stations from OGD
-            let response = await axios.get(`${BASE_URL}/bus/get_stations_on_route/${car.route_id}`);
+            let response = await axios.get(`${BASE_URL}/bus/get_stations_on_route/${car}`);
             data = {data: response.data, status: response.status};
         } catch (error) {
             console.error(error);

@@ -4,6 +4,7 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 import httpx
 from urllib.parse import unquote
 import math
+from ..utils import send_push_notification
 
 
 def _find_likely_bus(x, y, bus_list, threshold=0.00025):
@@ -35,6 +36,7 @@ class BusConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.x = self.scope['url_route']['kwargs']['x']
         self.y = self.scope['url_route']['kwargs']['y']
+        self.token = None
 
         await self.accept()
         print("Websocket connection started from ", self.x, self.y)
@@ -147,7 +149,6 @@ class BusConsumer(AsyncWebsocketConsumer):
             print("Cannot detect any bus from the location in the request")
             asyncio.create_task(self.send(text_data=json.dumps(None)))
 
-
     async def update(self, id, route_id):
         while True:
             # Import after the settings are configured to avoid:
@@ -155,9 +156,15 @@ class BusConsumer(AsyncWebsocketConsumer):
             from openapi_seoul_service.bus.tasks import get_bus
 
             bus = await get_bus(id, route_id)
+            print("current station: ", bus["station"]["name"])
             await self.send(text_data=json.dumps(bus))
 
-            await asyncio.sleep(30)
+            if self.token:
+                print("send_push_notification function here")
+                send_push_notification(self.token, bus["station"]["name"])
+
+
+            await asyncio.sleep(10)
 
     async def disconnect(self, close_code):
         self.task.cancel()
@@ -174,6 +181,10 @@ class BusConsumer(AsyncWebsocketConsumer):
                 fake_app_dashboard_url = "http://127.0.0.1:5001/receive_stop_request"
                 async with httpx.AsyncClient() as client:
                     response = await client.post(fake_app_dashboard_url, json=data)
+
+            if request == 'push':
+                print("Do something with ", data)
+                self.token = data.get("token", None)
 
         except json.JSONDecodeError:
             pass
