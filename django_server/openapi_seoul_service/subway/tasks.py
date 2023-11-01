@@ -11,7 +11,31 @@ SWOPENAPI_KEY = unquote(settings.SWOPENAPI_KEY)
 BASE_URL_SWOPENAPI = f"http://swopenapi.seoul.go.kr/api/subway/{SWOPENAPI_KEY}/json"
 
 async def get_train(number):
-    url = "http://swopenAPI.seoul.go.kr/api/subway/6f455a4d7768616e36396770656573/json/realtimeStationArrival/ALL"
+    train = {}
+    url = f"{BASE_URL_SWOPENAPI}/realtimeStationArrival/0/1/종각"
+
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url)
+        data = response.json()
+
+    if 'realtimeArrivalList' in data:
+        data = response.json()['realtimeArrivalList'][0]
+
+        train = {
+            'number': data['btrainNo'],
+            'line': data['subwayId'],
+            'direction': data['updnLine'],
+            'current_station': {
+                'name': data['arvlMsg3'],
+            },
+            'previous_station': {},
+            'next_station': {},
+            'is_arrived': data['arvlCd'],
+            'stops_at': data['bstatnNm'],
+            'type': 'subway',
+        }
+
+    url = f"{BASE_URL_SWOPENAPI}/realtimeStationArrival/ALL"
     get_subway_station = sync_to_async(SubwayStation.objects.get, thread_sensitive=True)
 
     async with httpx.AsyncClient() as client:
@@ -28,22 +52,6 @@ async def get_train(number):
     if 'realtimeArrivalList' in data:
         data = response.json()['realtimeArrivalList']
 
-        train = {}
-        for item in data:
-            if item['btrainNo'] == str(number):
-                train = {
-                    'number': number,
-                    'line': item['subwayId'],
-                    'direction': item['updnLine'],
-                    'current_station': {
-                        'name': item['arvlMsg3'],
-                    },
-                    'previous_station': {},
-                    'next_station': {},
-                    'is_arrived': item['arvlCd'],
-                    'stops_at': item['bstatnNm'],
-                    'type': 'subway',
-                }
         if train:
             for item in data:
                 if item['statnNm'] == train['current_station']['name'] \
@@ -66,7 +74,6 @@ async def get_train(number):
                         train['next_station']['name'] = None
 
         if train:
-            print("sending train... ", train)
             return train
         else:
             return None

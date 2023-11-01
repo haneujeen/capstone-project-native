@@ -16,7 +16,7 @@ from django.conf import settings
 
 
 OGD_API_KEY = unquote(settings.OGD_API_KEY)
-async def get_bus(id, route_id):
+async def get_bus(id, route_id, traffic_info):
     try:
         location = await get_location(id)
         previous_station, this_station, next_station = await get_stations(location['lastStnId'], route_id)
@@ -48,6 +48,7 @@ async def get_bus(id, route_id):
                 'is_full': this_station.get('full1'),
                 'plate_number': this_station.get('plainNo1'),
             },
+            'traffic_info': traffic_info,
         }
 
         print("Returning bus... ", bus['id'])
