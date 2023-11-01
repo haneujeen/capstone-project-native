@@ -64,6 +64,7 @@ OGD_API_KEY = env('OGD_API_KEY')
 OPENAI_API_KEY = env('OPENAI_API_KEY')
 SEOUL_API_KEY = env('SEOUL_API_KEY')
 SWOPENAPI_KEY = env('SWOPENAPI_KEY')
+WEATHER_API_KEY = env('WEATHER_API_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -141,11 +142,27 @@ if os.getenv("USE_CLOUD_SQL_AUTH_PROXY", None):
 # [END dbconfig]
 
 # Use a in-memory sqlite3 database when testing in CI systems
-if os.getenv("TRAMPOLINE_CI", None):
+elif os.getenv("TRAMPOLINE_CI", None):
     DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'mydb',
+            'USER': 'myuser',
+            'PASSWORD': 'mypassword',
+            'HOST': 'localhost',
+            'PORT': '5432',
+        }
+    }
+
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': 'mydb',
+            'USER': 'myuser',
+            'PASSWORD': 'mypassword',
+            'HOST': 'localhost',
+            'PORT': '5432',
         }
     }
 
