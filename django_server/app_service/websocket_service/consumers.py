@@ -32,6 +32,77 @@ def _find_likely_bus(x, y, bus_list, threshold=0.00025):
         return likely_bus
 
 
+def _get_traffic_info():
+    import requests
+    import xml.etree.ElementTree as ET
+    from django.conf import settings
+    import openai
+
+    SEOUL_API_KEY = unquote(settings.SEOUL_API_KEY)
+    WEATHER_API_KEY = unquote(settings.WEATHER_API_KEY)
+    OPENAI_API_KEY = unquote(settings.OPENAI_API_KEY)
+
+    link_ids = [1080008000, 1080009400]
+
+    speeds = []
+
+    for link_id in link_ids:
+        url = f"http://openapi.seoul.go.kr:8088/{SEOUL_API_KEY}/xml/TrafficInfo/1/5/{link_id}/"
+        response = requests.get(url)
+        root = ET.fromstring(response.content)
+
+        for row in root.iter('row'):
+            prcs_spd = row.find('prcs_spd').text
+            speeds.append(float(prcs_spd))
+
+    average_speed = sum(speeds) / len(speeds)
+    print(average_speed)
+
+    def get_weather(api_key, location_key):
+        base_url = f"http://dataservice.accuweather.com/currentconditions/v1/{location_key}"
+        params = {
+            "apikey": api_key,
+            "language": "en-us",
+            "details": True
+        }
+        response = requests.get(base_url, params=params)
+        weather = response.json()
+
+        return f"WeatherText: {weather[0]['WeatherText']}\n" \
+               f"HasPrecipitation: {weather[0]['HasPrecipitation']}\n" \
+               f"Temperature: {weather[0]['Temperature']}\n" \
+               f"Visibility: {weather[0]['Visibility']}\n" \
+               f"Wind Speed: {weather[0]['Wind']['Speed']}\n" \
+               f"CloudCover: {weather[0]['CloudCover']}\n"
+
+    api_key = WEATHER_API_KEY
+    location_key = '226081'
+    weather_information = get_weather(api_key, location_key)
+
+    openai.api_key = OPENAI_API_KEY
+
+    response = openai.ChatCompletion.create(
+        model="gpt-4",
+        messages=[
+            {
+                "role": "system",
+                "content": f"Here are the weather condition and the the average speed on major local roads."
+                           f"You will write a helpful and friendly message for public bus passengers about the current driving condition in Korean."
+                           f"You will include certain feature of the weather or road speed only when it's extremely deviated from the average."
+                           f"If none of the features is outside the average, don't include them and simply create a general message might help."
+                           f"The message will consist of 1 or 2 short sentences, and will not be longer than 2 sentences."
+                           f"- The average speed on major local roads: {average_speed} km/h,"
+                           f"- The weather information: {weather_information}"
+            },
+        ],
+        max_tokens=160,
+        frequency_penalty=0,
+        presence_penalty=0
+    )
+
+    return response.choices[0].message.content
+
+
 class BusConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.x = self.scope['url_route']['kwargs']['x']
@@ -47,7 +118,7 @@ class BusConsumer(AsyncWebsocketConsumer):
         from django.conf import settings
         OGD_API_KEY = unquote(settings.OGD_API_KEY)
 
-        # Search the stations nearby with the coords
+        # Search the stations nearby with the coordinates
         url = 'http://ws.bus.go.kr/api/rest/stationinfo/getStationByPos'
 
         params = {
@@ -126,17 +197,14 @@ class BusConsumer(AsyncWebsocketConsumer):
                         }
                     )
 
-            print("Buses: ", bus_list)
-            print(self.x, self.y)  # Requested coords
-
             likely_bus = _find_likely_bus(self.x, self.y, bus_list)
 
-            print("likely bus: ", likely_bus)
 
             if likely_bus:
+                traffic_info = _get_traffic_info()
+                print(traffic_info)
                 # start sending updates about the likely bus to the client
-                self.update_task = asyncio.create_task(self.update(likely_bus['id'], likely_bus['route']))
-                print("send_task added")
+                self.update_task = asyncio.create_task(self.update(likely_bus['id'], likely_bus['route'], traffic_info))
 
                 fake_app_url = "http://127.0.0.1:5001/receive_likely_bus"
                 async with httpx.AsyncClient() as client:
@@ -149,22 +217,19 @@ class BusConsumer(AsyncWebsocketConsumer):
             print("Cannot detect any bus from the location in the request")
             asyncio.create_task(self.send(text_data=json.dumps(None)))
 
-    async def update(self, id, route_id):
+    async def update(self, id, route_id, traffic_info):
         while True:
             # Import after the settings are configured to avoid:
             # ImproperlyConfigured: Requested setting OGD_API_KEY, but settings are not configure
             from openapi_seoul_service.bus.tasks import get_bus
 
-            bus = await get_bus(id, route_id)
-            print("current station: ", bus["station"]["name"])
+            bus = await get_bus(id, route_id, traffic_info)
             await self.send(text_data=json.dumps(bus))
 
             if self.token:
-                print("send_push_notification function here")
                 send_push_notification(self.token, bus["station"]["name"])
 
-
-            await asyncio.sleep(10)
+            await asyncio.sleep(30)
 
     async def disconnect(self, close_code):
         self.task.cancel()
@@ -202,8 +267,8 @@ class SubwayConsumer(AsyncWebsocketConsumer):
         # ImproperlyConfigured: Requested setting OGD_API_KEY, but settings are not configure
         from openapi_seoul_service.subway.tasks import get_train
 
-        initial_train = await get_train(self.id)
-        await self.send(text_data=json.dumps(initial_train))
+        #initial_train = await get_train(self.id)
+        #await self.send(text_data=json.dumps(initial_train))
 
         self.update_task = asyncio.create_task(self.update())
 
@@ -212,7 +277,7 @@ class SubwayConsumer(AsyncWebsocketConsumer):
             from openapi_seoul_service.subway.tasks import get_train
             train = await get_train(self.id)
             await self.send(text_data=json.dumps(train))
-            await asyncio.sleep(30)
+            await asyncio.sleep(60)
 
     async def disconnect(self, close_code):
         self.update_task.cancel()
