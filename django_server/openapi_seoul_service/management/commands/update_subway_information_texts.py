@@ -1,8 +1,7 @@
-import requests
 from django.core.management.base import BaseCommand
 from django.conf import settings
 from urllib.parse import unquote
-from openapi_seoul_service.models import SubwayStation, SubwayStationInformation
+from openapi_seoul_service.models import SubwayStation
 import openai
 import json
 
@@ -13,13 +12,13 @@ class Command(BaseCommand):
 
     def generate_text(self, accessibility_info, poi_locator):
         response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo-16k",
+            model="gpt-4",
             messages=[
                 {
                     "role": "system",
                     "content": f"""
                         You're a friendly AI providing helpful and easy-to-understand information about the facilities 
-                        available at each subway station and the instrunction to the subway users in Seoul 
+                        available at each subway station and the instruction to the subway users in Seoul 
                         with the given details:
                         Accessibility information: {accessibility_info}
                         POI locator: {poi_locator}
@@ -74,16 +73,19 @@ class Command(BaseCommand):
             if example_station:
                 if example_station.accessibility_information or example_station.POI_locator:
                     if not example_station.accessibility_information_text or not example_station.POI_locator_text:
-                        print(f"Generating text for station: {station_name}")
-                        response_dict = self.generate_text(example_station.accessibility_information,
-                                                           example_station.POI_locator)
+                        try:
+                            response_dict = self.generate_text(example_station.accessibility_information,
+                                                               example_station.POI_locator)
 
-                        print(f"Updating text for all {station_name} stations")
-                        stations_with_same_name = stations.filter(name=station_name)
-                        for station in stations_with_same_name:
-                            station.accessibility_information_text = response_dict['accessibility_information']
-                            station.POI_locator_text = response_dict['POI_locator']
-                            station.save()
+                            print(f"Adding text fields to all {station_name} stations")
+                            stations_with_same_name = stations.filter(name=station_name)
+                            for station in stations_with_same_name:
+                                station.accessibility_information_text = response_dict['accessibility_information']
+                                station.POI_locator_text = response_dict['POI_locator']
+                                station.save()
+
+                        except json.decoder.JSONDecodeError as e:
+                            print(f"Failed to generate text for station {station_name}. Error: {e}")
                 else:
                     print(f"No detail has been provided for station {station_name}")
                     pass
