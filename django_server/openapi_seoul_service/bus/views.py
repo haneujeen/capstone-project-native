@@ -2,7 +2,6 @@ from django.conf import settings
 from rest_framework.decorators import api_view
 import requests
 from rest_framework.response import Response
-from openai_api_service import api
 from urllib.parse import unquote
 
 OGD_API_KEY = unquote(settings.OGD_API_KEY)
@@ -25,12 +24,6 @@ def get_stations(request, query):
         'resultType': 'json'
     }
     response = requests.get(url, params=params)
-
-    if response.json()['msgHeader']['headerCd'] == '4':
-        print("No station found, try processing natural language")
-        text = api.process_query(query)
-        params['stSrch'] = text
-        response = requests.get(url, params=params)
 
     if response.json()['msgHeader']['headerCd'] == '0':
         data = response.json()['msgBody']['itemList']
