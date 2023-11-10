@@ -23,7 +23,7 @@ from django.conf import settings
 from django.forms.models import model_to_dict
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from openapi_seoul_service.models import SubwayStation
+from openapi_seoul_service.models import SubwayStation, SubwayStationInformation
 from urllib.parse import unquote
 from ..utils import populate_subway_stations
 
@@ -273,3 +273,36 @@ def get_stations_on_route(request, start_name, line, direction, stops_at):
 
     except Exception as e:
         return _build_response(False, str(e), 500)
+
+
+from ast import literal_eval
+
+@api_view(['GET'])
+def get_facilities(request, station_name):
+    try:
+        stations = SubwayStation.objects.filter(name__icontains=station_name)
+
+        if not stations:
+            return _build_response(False, 'Station not found: ' + station_name, 404)
+
+        station = stations[0]
+
+        accessibility_info = 'The station hasn\'t provided us the information yet.'
+        poi_info = {'sentence': 'The station hasn\'t provided us the information yet.'}
+
+        if station.accessibility_information_text:
+            accessibility_info = station.accessibility_information_text
+
+        if station.POI_locator_text:
+            # Attempt to parse the string into a dictionary
+            try:
+                parsed_poi = literal_eval(station.POI_locator_text)
+                poi_info["sentence"] = parsed_poi.get("sentence", "")
+            except Exception as e:
+                print(f"Error parsing POI_locator_text: {e}")
+
+        return _build_response(True, '', 200, accessibility=accessibility_info, poi=poi_info)
+
+    except Exception as e:
+        return _build_response(False, str(e), 500)
+
