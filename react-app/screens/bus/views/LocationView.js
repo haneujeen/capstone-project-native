@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { SafeAreaView, Text } from 'react-native';
+import { View, SafeAreaView, Text, ActivityIndicator, StyleSheet } from 'react-native'; 
 import * as Location from 'expo-location';
 import SocketView from './SocketView';
+import { colors } from '../../../styles/colors';
 
-export default function LocationView() {
+export default function LocationView({ navigation }) {
     const [location, setLocation] = useState(null);
     const [errorMsg, setErrorMsg] = useState(null);
 
@@ -20,18 +21,29 @@ export default function LocationView() {
         })();
     }, []);
 
-    let text = 'Waiting..';
     if (errorMsg) {
-        text = errorMsg;
+        return (
+            <View style={styles.container}>
+                <Text>{errorMsg}</Text>
+            </View>
+        );
     } else if (location) {
-        text = JSON.stringify(location);
-        console.log(text)
+        return (
+            <SocketView location={location} navigation={navigation} />
+        );
+    } else {
+        return (
+            <View style={styles.container}>
+                <ActivityIndicator size="large" color={colors.systemGray2} />
+            </View>
+        );
     }
-
-    return (
-        <SafeAreaView>
-            <Text>{text}</Text>
-            {location && <SocketView location={location} />}
-        </SafeAreaView>
-    );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        backgroundColor: colors.white,
+        height: '100%',
+        justifyContent: 'center',
+    }
+});

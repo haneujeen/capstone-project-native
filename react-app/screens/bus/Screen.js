@@ -1,13 +1,12 @@
 import { SafeAreaView, Text, View } from "react-native";
 import LocationView from "./views/LocationView";
-import PushNotificationView from "./views/PushNotificationView";
-import styles from '../../styles/AppStyles';
+import { colors } from "../../styles/colors";
 
-export default function Screen() {
+export default function Screen({ navigation }) {
 
     return (
-        <SafeAreaView style={styles.viewStyle}>
-            <LocationView></LocationView>
+        <SafeAreaView style={{ backgroundColor: colors.white }}>
+            <LocationView navigation={navigation}></LocationView>
         </SafeAreaView>
     )
 }

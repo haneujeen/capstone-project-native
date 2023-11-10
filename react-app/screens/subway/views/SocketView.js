@@ -1,29 +1,35 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { getSubwaySocket } from "../../../api/socket_service";
-import { SafeAreaView, Text } from "react-native";
+import { View, Text, Image, Animated, Easing } from "react-native";
 import TrainView from "./TrainView";
+import { colors } from "../../../styles/colors";
+import styles from "../../../styles/TrainViewStyles";
 
-export default function SocketView({ trainId }) {
+export default function SocketView({ trainId, navigation }) {
     const [ socket, setSocket ] = useState(null);
     const [ train, setTrain ] = useState(null);
 
-    trainId = 3400;
-
+    
     useEffect(() => {
         let socket = getSubwaySocket(trainId, setTrain);
         setSocket(socket);
+
+        
+        
+        return () => {
+            socket.close();
+        }
     }, [])
     
 
     return (
-        <SafeAreaView>
-            <Text>{trainId}</Text>
+        <View style={{ height: '100%', backgroundColor: colors.white }}>
+            
             {train && (
                 <>
-                    <Text>{train.number} {train.line}</Text>
-                    <TrainView train={train}></TrainView>
+                    <TrainView train={train} navigation={navigation}></TrainView>
                 </>
             )}
-        </SafeAreaView>
+        </View>
     )
 }

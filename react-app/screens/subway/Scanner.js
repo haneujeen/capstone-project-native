@@ -20,13 +20,19 @@ export default function Scanner() {
     }, []);
 
     const handleBarCodeScanned = ({ type, data }) => {
-        alert(`Bar code with type ${type} and data ${data} has been scanned!`);
+        //alert(`Bar code with type ${type} and data ${data} has been scanned!`);
         setHasPermission(null); // turn off the scanner
-        navigation.navigate('Screen', { trainId: data }); // navigate back to Home screen
+        navigation.navigate('SubwayScreen', { trainId: data }); // navigate back to Home screen
     };
 
     if (hasPermission === null) {
-        return <Text>Requesting for camera permission</Text>;
+        return <View
+            style={{
+                flex: 1,
+                flexDirection: 'column',
+                justifyContent: 'flex-end',
+                backgroundColor: '#000',
+        }}></View>;
     }
     if (hasPermission === false) {
         return <Text>No access to camera</Text>;
@@ -34,10 +40,11 @@ export default function Scanner() {
 
     return (
         <View
-        style={{
-            flex: 1,
-            flexDirection: 'column',
-            justifyContent: 'flex-end',
+            style={{
+                flex: 1,
+                flexDirection: 'column',
+                justifyContent: 'flex-end',
+                backgroundColor: '#fff',
         }}>
         <BarCodeScanner
             onBarCodeScanned={handleBarCodeScanned}
