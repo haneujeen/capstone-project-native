@@ -1,12 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { SafeAreaView, Text, View, Button } from "react-native";
+import { SafeAreaView, Text, View, Button, StyleSheet, ActivityIndicator } from "react-native";
 import { getBusSocket } from '../../../api/socket_service';
 import BusView from './BusView';
-import StopButtonView from './StopButtonView';
-import { v4 as uuidv4 } from 'uuid';
-import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { registerForPushNotificationsAsync } from '../../../api/push_service';
+import { colors } from '../../../styles/colors';
 
 Notifications.setNotificationHandler({
     handleNotification: async () => ({
@@ -17,13 +15,13 @@ Notifications.setNotificationHandler({
 });
 
 // Can use this function below OR use Expo's Push Notification Tool from: https://expo.dev/notifications
-async function sendPushNotification(expoPushToken) {
+async function sendPushNotification(expoPushToken, title, body) {
     const message = {
         to: expoPushToken,
         sound: 'default',
-        title: 'Original Title',
-        body: 'And here is the body!',
-        data: { someData: 'goes here' },
+        title: title,
+        body: body,
+        data: { someData: '...' },
     };
 
     await fetch('https://exp.host/--/api/v2/push/send', {
@@ -37,15 +35,14 @@ async function sendPushNotification(expoPushToken) {
     });
 }
 
-export default function SocketView({ location }) {
+export default function SocketView({ location, navigation }) {
     const [ socket, setSocket ] = useState(null);
     const [ bus, setBus ] = useState(null);
     const { latitude, longitude } = location.coords;
 
     //location = {x: longitude, y: latitude}
-    location = {x: 127.0741781792, y: 37.6227408373}
-    let uuid = uuidv4();
-
+    location = {x: 127.017167, y: 37.652699}
+    
     const [expoPushToken, setExpoPushToken] = useState('');
     const [notification, setNotification] = useState(false);
     const notificationListener = useRef();
@@ -76,41 +73,42 @@ export default function SocketView({ location }) {
         } catch (error) {
             console.log(error);
         }
+        return () => {
+            socket.close();
+        }
     }, [])
 
     useEffect(() => {
         if (!socket) return;
-        console.log("Sending push token with request")
+        /** 
         socket.send(JSON.stringify({
             'request': 'push',
             'token': expoPushToken
         }));
-
+        */
     }, [expoPushToken]);
 
     return (
-        <SafeAreaView>
-            <Text>{location.x} {location.y}</Text>
-            {bus && (
-                <>
-                    <Text>{bus.id} {bus.name}</Text>
-                    <BusView bus={bus}></BusView>
-                    <StopButtonView bus={bus} uuid={uuid} socket={socket}></StopButtonView>
-                    
-                </>
-            )}
-            <Text>Your expo push token: {expoPushToken}</Text>
-            <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-                <Text>Title: {notification && notification.request.content.title} </Text>
-                <Text>Body: {notification && notification.request.content.body}</Text>
-                <Text>Data: {notification && JSON.stringify(notification.request.content.data)}</Text>
-            </View>
-            <Button
-                title="Press to Send Notification"
-                onPress={async () => {
-                    await sendPushNotification(expoPushToken);
-                }}
+        <View style={styles.container}>
+            {bus ? (
+                <BusView 
+                bus={bus} 
+                socket={socket} 
+                navigation={navigation} 
+                sendPushNotification={sendPushNotification}
+                expoPushToken={expoPushToken}
             />
-        </SafeAreaView>
+            ) : (
+                <ActivityIndicator size="large" color={colors.systemGray2} />
+            )}
+        </View>
     )
 }
+
+const styles = StyleSheet.create({
+    container: {
+        backgroundColor: colors.white,
+        height: '100%',
+        justifyContent: 'center',
+    }
+});

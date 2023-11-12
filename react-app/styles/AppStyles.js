@@ -1,47 +1,50 @@
 import { StyleSheet } from 'react-native';
-
-const colors = {
-    secondary: "hsla(0, 0%, 53%, 1)", //desc, subtitle & spinner
-    light7: "hsla(0, 0%, 84%, 1)", //border
-    light9: "hsla(240, 11%, 96%, 1)", //background
-    white: "hsla(0, 0%, 100%, 1)",
-    blue2: "hsla(211, 86%, 50%, 1)",
-    light8: "hsla(9, 8%, 83%, 1)", //redish gray
-    black: "hsla(0, 0%, 0%, 1)",
-    blue1: "hsla(211, 100%, 55%, 1)", //switch
-    green: "hsla(130, 78%, 60%, 1)",
-    red: "hsla(3, 100%, 59%, 1)",
-    gray: "hsla(9, 18%, 92%, 1)", //innerContainer
-}
+import { colors } from './colors';
 
 export default StyleSheet.create({
+    textCenter: {
+        fontWeight: '100',
+        textAlign: 'center',
+    },  
     container: {
         flex: 1,
-        backgroundColor: colors.light9,
-        alignItems: 'center',
-        justifyContent: 'center',
         margin: 16,
+        justifyContent: 'center',
+        width: '80%',
+        alignSelf: 'center'
     },
     innerContainer: {
         flexDirection: 'column',
-        backgroundColor: colors.gray,
-        borderWidth: 0.2,
-        borderColor: 'hsla(0, 0%, 89%, 1)',
-        borderRadius: 10,
+        backgroundColor: colors.light9,
+        borderWidth: 0.5,
+        borderColor: colors.light8,
+        borderRadius: 9,
         width: '100%',
+        padding: 8,
+        marginVertical: 8,
+    },
+    innerContainerLight: {
+        flexDirection: 'column',
+        backgroundColor: colors.white,
+        borderWidth: 0.5,
+        borderColor: colors.light8,
+        borderRadius: 9,
+        width: '100%',
+        padding: 8,
+        marginVertical: 8,
     },
     listItem: {
         borderBottomWidth: 1,
         borderBottomColor: colors.light7,
         padding: 11,
     },
-    title: {
-        fontSize: 40,
+    textBold: {
+        fontSize: 25,
         fontWeight: 'bold',
     },
     description: {
-        color: colors.secondary,
-        fontSize: 13,
+        fontWeight: 'bold',
+        fontSize: 15,
         marginHorizontal: 10,
     },
     iconContainer: {
