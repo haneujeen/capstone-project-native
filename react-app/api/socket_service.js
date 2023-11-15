@@ -1,7 +1,8 @@
 import { dummyBus, dummyTrain } from "./dummies";
+import { BASE_URL } from "./config";
 
 export function getBusSocket(location, setBus) {
-    let endpoint = `ws://172.30.1.59:8000/ws/bus/${location.x}/${location.y}/`;
+    let endpoint = `ws://${BASE_URL}/ws/bus/${location.x}/${location.y}/`;
 
     let socket = new WebSocket(endpoint);
 
@@ -10,7 +11,6 @@ export function getBusSocket(location, setBus) {
     };
 
     socket.onmessage = (event) => {
-        console.log('Message from server: ', event.data);
         let data;
         if (event.data === null) {
             data = dummyBus();
@@ -39,15 +39,13 @@ export function getBusSocket(location, setBus) {
 }
 
 export function getSubwaySocket(trainId, setTrain) {
-    let socket = new WebSocket(`ws://172.30.1.59:8000/ws/subway/${trainId}/`);
+    let socket = new WebSocket(`ws://${BASE_URL}/ws/subway/${trainId}/`);
 
     socket.onopen = () => {
         console.log('WebSocket is open now.');
     };
 
     socket.onmessage = (event) => {
-        console.log('Message from server: ', event.data);
-
         let data;
         if (event.data === null) {
             data = dummyTrain();
@@ -64,7 +62,6 @@ export function getSubwaySocket(trainId, setTrain) {
 
     socket.onclose = (event) => {
         console.log('WebSocket is closed now.', event.reason);
-        //setTimeout(() => getSubwaySocket(trainId, setTrain), 5000);
     };
 
     return socket;

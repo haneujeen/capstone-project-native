@@ -69,8 +69,7 @@ WEATHER_API_KEY = env('WEATHER_API_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '172.30.1.59', '172.20.2.216',
-                 'ig004-394806.du.r.appspot.com']
+ALLOWED_HOSTS = ['localhost', 'ig004-394806.du.r.appspot.com']
 
 # Application definition
 
