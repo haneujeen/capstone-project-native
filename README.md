@@ -1,8 +1,8 @@
-### 프로젝트 소개
-이 프로젝트는 과학기술정보통신부 ICT 멘토링과 연계된 2023년도 덕성여자대학교 컴퓨터공학전공 졸업프로젝트의 일환으로 진행되었습니다.
+### Description
+This project has been undertaken as a Computer Science graduation project, sponsored by the Ministry of Science and ICT of Korea's 2023 Mentoring Program.
 
-### 프로젝트 요약
-- 제목: 실시간 GPS 탐지 및 GPT-4 모델 활용 대중교통 알림 서비스 모바일 어플리케이션 (어댄고)
+### Summary
+- Subject: Public Transport Tracking Mobile Application with GPS and NLP Information System
 - 주요기능
   1. GPS 기반 사용자가 탑승한 버스 탐지/QR코드 스캔을 통해 사용자가 탑승한 지하철 탐지
   2. 탑승 차량을 추적하여 실제 버스 또는 지하철 내에 설치된 전광판/안내방송과 동일한 정보를 어플리케이션 UI를 통해 제공 및 업데이트
