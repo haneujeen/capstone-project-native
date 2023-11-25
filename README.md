@@ -1,6 +1,6 @@
 <div align="center" style="display: flex; justify-content: space-around;">
   <img src="https://drive.google.com/uc?id=1wdp2YuIbN3Qqks1pjoSLcV6KxF5J4-iP" alt="gif" width="30%"/>
-  <img src="https://drive.google.com/uc?id=1UW4_C-aJv_4KXZA6oQz4GftOHh3CDBfA" alt="gif" width="30%"/>
+  <img src="https://drive.google.com/uc?id=1NqWv1f0vL5Xzh236qRGtLVTQbmpq2TQG" alt="gif" width="30%"/>
   <img src="https://drive.google.com/uc?id=1L0658B5MZ8qv_f5GQ3CfbdDlvHHHTQ7c" alt="gif" width="30%"/>
 </div>
 
