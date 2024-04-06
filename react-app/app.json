@@ -4,7 +4,11 @@
       "slug": "react-app",
       "version": "1.0.0",
       "orientation": "portrait",
-      "icon": "./assets/icon.png",
+      "icon": "./assets/test_icon.png",
+      "notification": {
+        "icon": "./assets/test_icon.png",
+        "color": "#fff"
+      },
       "userInterfaceStyle": "light",
       "splash": {
         "image": "./assets/splash.png",
@@ -25,6 +29,11 @@
       },
       "web": {
         "favicon": "./assets/favicon.png"
+      },
+      "extra": {
+        "eas": {
+            "projectId": "75d225a0-0ad4-4003-a8e1-08a4b19ee960"
+        }
       }
     }
   }
