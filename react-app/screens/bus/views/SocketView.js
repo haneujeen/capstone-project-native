@@ -21,7 +21,6 @@ async function sendPushNotification(expoPushToken, title, body) {
         sound: 'default',
         title: title,
         body: body,
-        data: { someData: '...' },
     };
 
     await fetch('https://exp.host/--/api/v2/push/send', {
