@@ -7,6 +7,13 @@ import { io } from "socket.io-client";
 const socket = io("http://127.0.0.1:5001");
 const likelyBus = ref(null);
 const stopRequestData = ref(null);
+const requestData = ref([
+  '* UUID: bf5fd680-2daa-4a94-a952-97c33dc09fb1',
+  '* stopTitle: Seoul Station Exit 4(109900092)',
+  '* device: iPhone(iPhone 15 Pro)',
+  '* busId: 109066382',
+  '* location: (127.016139, 37.654259)'
+]);
 
 onMounted(() => {
     socket.on('connect', () => {
@@ -42,12 +49,11 @@ onUnmounted(() => {
 <template>
   <div>
     <a href="https://vitejs.dev" target="_blank">
-      <img src="/vite.svg" class="logo" alt="Vite logo" />
-    </a>
-    <a href="https://vuejs.org/" target="_blank">
-      <img src="./assets/vue.svg" class="logo vue" alt="Vue logo" />
+      <img src="./assets/sparkles.png" class="logo" alt="Vite logo" />
     </a>
   </div>
+  <p v-for="(data, index) in requestData" :key="index">{{ data }}</p>
+
   <p v-if="likelyBus">{{ likelyBus.id }}</p>
   <p v-if="stopRequestData">{{ stopRequestData.deviceName }}</p>
 </template>
@@ -64,5 +70,8 @@ onUnmounted(() => {
 }
 .logo.vue:hover {
   filter: drop-shadow(0 0 2em #42b883aa);
+}
+p {
+    font-size: 20px;
 }
 </style>
