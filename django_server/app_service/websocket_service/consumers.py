@@ -6,7 +6,6 @@ from urllib.parse import unquote
 import math
 from ..utils import send_push_notification
 
-
 def _find_likely_bus(x, y, bus_list, threshold=0.00025):
     # Calculate the distance from a bus and a user for all the nearing buses in the list
     user_x = float(x)
@@ -56,7 +55,6 @@ def _get_traffic_info():
             speeds.append(float(prcs_spd))
 
     average_speed = sum(speeds) / len(speeds)
-    print(average_speed)
 
     def get_weather(api_key, location_key):
         base_url = f"http://dataservice.accuweather.com/currentconditions/v1/{location_key}"
@@ -104,14 +102,20 @@ def _get_traffic_info():
 
 
 class BusConsumer(AsyncWebsocketConsumer):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.x = None
+        self.y = None
+        self.token = None
+        self.station_name = ""
+        self.task = None
+
     async def connect(self):
         self.x = self.scope['url_route']['kwargs']['x']
         self.y = self.scope['url_route']['kwargs']['y']
         self.token = None
 
         await self.accept()
-        print("Websocket connection started from ", self.x, self.y)
-
         self.task = asyncio.create_task(self.find_bus())
 
     async def find_bus(self):
@@ -167,12 +171,10 @@ class BusConsumer(AsyncWebsocketConsumer):
                                 'name': item['busRouteAbrv']
                             }
                         )
-                print("Bus IDs: ", bus_ids, "for station id: ", id)
 
                 # Get each bus's current coordinates
                 url_pos = 'http://ws.bus.go.kr/api/rest/buspos/getBusPosByVehId'
                 for bus_id in bus_ids:
-                    print("Getiing bus ", bus_id, "'s current coordinates")
                     params = {
                         'serviceKey': OGD_API_KEY,
                         'vehId': bus_id['id'],
@@ -219,12 +221,18 @@ class BusConsumer(AsyncWebsocketConsumer):
 
     async def update(self, id, route_id, traffic_info):
         while True:
+            from openapi_seoul_service.bus.tasks import get_bus
             # Import after the settings are configured to avoid:
             # ImproperlyConfigured: Requested setting OGD_API_KEY, but settings are not configure
-            from openapi_seoul_service.bus.tasks import get_bus
 
             bus = await get_bus(id, route_id, traffic_info)
-            await self.send(text_data=json.dumps(bus))
+            """
+            if self.station_name != bus["station"]["name"]:
+            self.station_name = bus["station"]["name"]
+            url = get_audio(self.station_name, bus["name"])
+
+            await self.send(text_data=json.dumps({"bus": bus, "audioUrl": url}))
+            """
 
             if self.token:
                 send_push_notification(self.token, bus["station"]["name"])
